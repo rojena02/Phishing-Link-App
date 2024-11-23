@@ -11,9 +11,13 @@ NB_DENSE_CELLS = 256
 EMBEDDING_SIZE = 281
 
 
-def make_bidirectional_lstm_model(num_input_tokens, embedding_dim=EMBEDDING_SIZE, lstm_units=NB_LSTM_CELLS, output_dim=2):
+def make_bidirectional_lstm_model(
+        num_input_tokens, 
+        embedding_dim=EMBEDDING_SIZE, 
+        lstm_units=NB_LSTM_CELLS, 
+        output_dim=2
+):
     model = Sequential([
-        # Specify input_length in Embedding layer
         Embedding(
             input_dim=num_input_tokens,
             output_dim=embedding_dim,
@@ -28,7 +32,6 @@ def make_bidirectional_lstm_model(num_input_tokens, embedding_dim=EMBEDDING_SIZE
         Dense(output_dim, activation='softmax')
     ])
     
-    # Compile model
     model.compile(
         optimizer=Adam(learning_rate=0.001),
         loss='categorical_crossentropy',
