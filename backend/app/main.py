@@ -1,6 +1,5 @@
 
 from keras_malicious_url_detector.library.bidirectional_lstm import BidirectionalLstmEmbedPredictor
-from keras_malicious_url_detector.library.utility.url_data_loader import load_url_data
 from fastapi import FastAPI
 from pydantic import BaseModel, HttpUrl
 from fastapi.middleware.cors import CORSMiddleware
@@ -8,15 +7,14 @@ from fastapi.middleware.cors import CORSMiddleware
 class URLData(BaseModel): 
     url: HttpUrl
 
-
-app = FastAPI()
+app = FastAPI(title="Phishing Link Detection Backend")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],  # Allows all methods (GET, POST, PUT, etc.)
-    allow_headers=["*"],  # Allows all headers
+    allow_methods=["*"], 
+    allow_headers=["*"], 
 )
 
 model_dir_path = './models'
