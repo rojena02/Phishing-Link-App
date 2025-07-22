@@ -20,7 +20,7 @@ def main():
     text_model = extract_text_model(url_data['text'])
 
     batch_size = 64
-    epochs = 100
+    epochs = 30
     history = classifier.fit(text_model=text_model,
                              model_dir_path=model_dir_path,
                              url_data=url_data, batch_size=batch_size, epochs=epochs)
