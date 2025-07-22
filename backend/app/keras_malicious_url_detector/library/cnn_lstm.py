@@ -1,26 +1,76 @@
 import numpy as np
 from keras import Sequential
 from keras.callbacks import ModelCheckpoint
-from keras.layers import Embedding, SpatialDropout1D, Conv1D, MaxPooling1D, LSTM, Dense
+from tensorflow.keras.optimizers import Adam
+from keras.layers import Embedding, SpatialDropout1D, Conv1D, MaxPooling1D, LSTM, Dense, BatchNormalization,Dropout, Bidirectional
 from sklearn.model_selection import train_test_split
 
 NB_LSTM_CELLS = 256
 NB_DENSE_CELLS = 256
 EMBEDDING_SIZE = 100
 
-
 def make_cnn_lstm_model(num_input_tokens, max_len):
     model = Sequential()
-    model.add(Embedding(input_dim=num_input_tokens, input_length=max_len, output_dim=EMBEDDING_SIZE))
-    model.add(SpatialDropout1D(0.2))
+    
+    # Embedding layer with better initialization
+    model.add(Embedding(
+        input_dim=num_input_tokens, 
+        input_length=max_len, 
+        output_dim=128,  # Reduced from EMBEDDING_SIZE for efficiency
+        embeddings_initializer='uniform'
+    ))
+    
+    # Regularization
+    model.add(SpatialDropout1D(0.3))
+    
+    # Multiple CNN layers for better feature extraction
+    # First conv block
+    model.add(Conv1D(filters=128, kernel_size=3, padding='same', activation='relu'))
+    model.add(BatchNormalization())
+    model.add(MaxPooling1D(pool_size=2))
+    model.add(Dropout(0.2))
+    
+    # Second conv block with different kernel size
     model.add(Conv1D(filters=256, kernel_size=5, padding='same', activation='relu'))
-    model.add(MaxPooling1D(pool_size=4))
-    model.add(LSTM(NB_LSTM_CELLS))
+    model.add(BatchNormalization())
+    model.add(MaxPooling1D(pool_size=2))
+    model.add(Dropout(0.3))
+    
+    # Third conv block for more complex patterns
+    model.add(Conv1D(filters=512, kernel_size=3, padding='same', activation='relu'))
+    model.add(BatchNormalization())
+    model.add(Dropout(0.3))
+    
+    # Bidirectional LSTM for better context understanding
+    model.add(Bidirectional(LSTM(256, return_sequences=True)))
+    model.add(Dropout(0.4))
+    
+    # Second LSTM layer
+    model.add(Bidirectional(LSTM(128)))
+    model.add(Dropout(0.4))
+    
+    # Dense layers with regularization
+    model.add(Dense(256, activation='relu'))
+    model.add(BatchNormalization())
+    model.add(Dropout(0.5))
+    
+    model.add(Dense(64, activation='relu'))
+    model.add(Dropout(0.3))
+    
+    # Output layer
     model.add(Dense(units=2, activation='softmax'))
+    
+    # Better optimizer and learning rate scheduling
 
-    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+    optimizer = Adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999)
+    
+    model.compile(
+        optimizer=optimizer, 
+        loss='categorical_crossentropy', 
+        metrics=['accuracy', 'precision', 'recall']
+    )
+    
     return model
-
 
 class CnnLstmPredictor(object):
     model_name = 'cnn-lstm'
@@ -55,6 +105,8 @@ class CnnLstmPredictor(object):
         self.char2idx = config['char2idx']
 
         self.model = make_cnn_lstm_model(self.num_input_tokens, self.max_url_seq_length)
+        self.model.build(input_shape=(None, self.max_url_seq_length))
+
         self.model.load_weights(weight_file_path)
 
     def predict(self, url):
@@ -65,7 +117,8 @@ class CnnLstmPredictor(object):
                 X[0, idx] = self.char2idx[c]
         predicted = self.model.predict(X)[0]
         predicted_label = np.argmax(predicted)
-        return predicted_label
+        return predicted_label, predicted
+    
 
     def extract_training_data(self, url_data):
         data_size = url_data.shape[0]

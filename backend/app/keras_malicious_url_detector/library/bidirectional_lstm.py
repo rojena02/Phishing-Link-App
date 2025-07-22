@@ -1,5 +1,5 @@
 import numpy as np
-from keras.layers import Embedding, SpatialDropout1D, LSTM, Bidirectional, Dense
+from keras.layers import Embedding, SpatialDropout1D, LSTM, Bidirectional, Dense,BatchNormalization, Dropout
 from keras.optimizers import Adam
 from sklearn.model_selection import train_test_split
 
@@ -9,33 +9,69 @@ from keras.callbacks import ModelCheckpoint
 NB_LSTM_CELLS = 256
 NB_DENSE_CELLS = 256
 EMBEDDING_SIZE = 281
-
-
 def make_bidirectional_lstm_model(
         num_input_tokens, 
-        embedding_dim=EMBEDDING_SIZE, 
-        lstm_units=NB_LSTM_CELLS, 
+        embedding_dim=128,  # Reduced from 281 for efficiency
+        lstm_units=256, 
         output_dim=2
 ):
     model = Sequential([
+        # Embedding layer with better configuration
         Embedding(
             input_dim=num_input_tokens,
             output_dim=embedding_dim,
-            input_length=None  # Allow variable length input
+            input_length=None,
+            embeddings_initializer='uniform',
+            name='embedding'
         ),
-        SpatialDropout1D(0.2),
+        
+        # Spatial dropout for embedding regularization
+        SpatialDropout1D(0.3),
+        
+        # First bidirectional LSTM layer
         Bidirectional(LSTM(
             units=lstm_units,
-            dropout=0.2,
-            recurrent_dropout=0.2
-        )),
-        Dense(output_dim, activation='softmax')
+            return_sequences=True,  # Enable stacking
+            dropout=0.3,
+            recurrent_dropout=0.3,
+            kernel_regularizer='l2'
+        ), name='bidirectional_lstm_1'),
+        
+        # Second bidirectional LSTM layer
+        Bidirectional(LSTM(
+            units=lstm_units // 2,  # Reduce size for second layer
+            return_sequences=False,
+            dropout=0.3,
+            recurrent_dropout=0.3,
+            kernel_regularizer='l2'
+        ), name='bidirectional_lstm_2'),
+        
+        # Dense layers with regularization
+        Dense(512, activation='relu', name='dense_1'),
+        BatchNormalization(),
+        Dropout(0.5),
+        
+        Dense(256, activation='relu', name='dense_2'),
+        BatchNormalization(),
+        Dropout(0.4),
+        
+        Dense(128, activation='relu', name='dense_3'),
+        Dropout(0.3),
+        
+        # Output layer
+        Dense(output_dim, activation='softmax', name='output')
     ])
     
+    # Better optimizer configuration
     model.compile(
-        optimizer=Adam(learning_rate=0.001),
+        optimizer=Adam(
+            learning_rate=0.001,
+            beta_1=0.9,
+            beta_2=0.999,
+            epsilon=1e-07
+        ),
         loss='categorical_crossentropy',
-        metrics=['accuracy']
+        metrics=['accuracy', 'precision', 'recall']
     )
     
     return model
@@ -98,6 +134,8 @@ class BidirectionalLstmEmbedPredictor(object):
         predicted = self.model.predict(X)[0]
         predicted_label = np.argmax(predicted)
         return predicted_label, predicted
+    
+    
 
     def extract_training_data(self, url_data):
         data_size = url_data.shape[0]

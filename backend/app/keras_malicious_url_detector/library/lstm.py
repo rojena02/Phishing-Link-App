@@ -1,22 +1,62 @@
 import numpy as np
 from keras import Sequential
 from keras.callbacks import ModelCheckpoint
-from keras.layers import LSTM, Dense, Dropout, Activation
+from keras.layers import LSTM, Dense, Dropout, Activation, Bidirectional, BatchNormalization
 from sklearn.model_selection import train_test_split
-
-NB_LSTM_CELLS = 256
-NB_DENSE_CELLS = 256
+from keras.optimizers import Adam
 
 
 def make_lstm_model(num_input_tokens):
     model = Sequential()
-    model.add(LSTM(NB_LSTM_CELLS, input_shape=(None, num_input_tokens), return_sequences=False, return_state=False, dropout=0.2))
-    model.add(Dense(NB_DENSE_CELLS))
+    
+    # First LSTM layer - bidirectional for better context
+    model.add(Bidirectional(
+        LSTM(256, 
+             input_shape=(None, num_input_tokens),
+             return_sequences=True,  # Return sequences for stacking
+             dropout=0.3,
+             recurrent_dropout=0.3),
+        name='bidirectional_lstm_1'
+    ))
+    
+    # Second LSTM layer
+    model.add(Bidirectional(
+        LSTM(128,
+             return_sequences=False,
+             dropout=0.3,
+             recurrent_dropout=0.3),
+        name='bidirectional_lstm_2'
+    ))
+    
+    # Dense layers with proper regularization
+    model.add(Dense(256, activation='relu', name='dense_1'))
+    model.add(BatchNormalization())
+    model.add(Dropout(0.5))
+    
+    model.add(Dense(128, activation='relu', name='dense_2'))
+    model.add(BatchNormalization())
+    model.add(Dropout(0.4))
+    
+    model.add(Dense(64, activation='relu', name='dense_3'))
     model.add(Dropout(0.3))
-    model.add(Dense(2))
-    model.add(Activation('softmax'))
-
-    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+    
+    # Output layer
+    model.add(Dense(2, activation='softmax', name='output'))
+    
+    # Better optimizer configuration
+    optimizer = Adam(
+        learning_rate=0.001,
+        beta_1=0.9,
+        beta_2=0.999,
+        epsilon=1e-07
+    )
+    
+    model.compile(
+        optimizer=optimizer,
+        loss='categorical_crossentropy',
+        metrics=['accuracy', 'precision', 'recall']
+    )
+    
     return model
 
 
@@ -47,24 +87,34 @@ class LstmPredictor(object):
         config_file_path = self.get_config_file_path(model_dir_path)
         weight_file_path = self.get_weight_file_path(model_dir_path)
 
-        config = np.load(config_file_path).item()
+        config = np.load(config_file_path, allow_pickle=True).item()
         self.num_input_tokens = config['num_input_tokens']
         self.max_url_seq_length = config['max_url_seq_length']
         self.idx2char = config['idx2char']
         self.char2idx = config['char2idx']
 
         self.model = make_lstm_model(self.num_input_tokens)
+        dummy_input = np.zeros((1, 1, self.num_input_tokens))  # Variable length
+        _ = self.model(dummy_input)
         self.model.load_weights(weight_file_path)
 
+    
     def predict(self, url):
-        data_size = 1
-        X = np.zeros(shape=(data_size, self.max_url_seq_length, self.num_input_tokens))
-        for idx, c in enumerate(url):
+        # Truncate URL if it's longer than max length
+        url_truncated = url[:self.max_url_seq_length]
+        actual_length = len(url_truncated)
+        
+        # Create tensor with actual URL length (not padded to max)
+        X = np.zeros(shape=(1, actual_length, self.num_input_tokens))
+        
+        for idx, c in enumerate(url_truncated):
             if c in self.char2idx:
                 X[0, idx, self.char2idx[c]] = 1
+        
         predicted = self.model.predict(X)[0]
         predicted_label = np.argmax(predicted)
-        return predicted_label
+        return predicted_label, predicted
+    
 
     def extract_training_data(self, url_data):
         data_size = url_data.shape[0]
