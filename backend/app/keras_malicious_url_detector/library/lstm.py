@@ -1,64 +1,80 @@
 import numpy as np
 from keras import Sequential
-from keras.callbacks import ModelCheckpoint
-from keras.layers import LSTM, Dense, Dropout, Activation, Bidirectional, BatchNormalization
+from keras.callbacks import ModelCheckpoint, EarlyStopping
+from keras.layers import LSTM, Dense, Dropout, Embedding, Bidirectional, BatchNormalization
 from sklearn.model_selection import train_test_split
 from keras.optimizers import Adam
 
+from keras.regularizers import l2
 
-def make_lstm_model(num_input_tokens):
+
+early_stopping = EarlyStopping(
+    monitor='val_loss',      # Metric to monitor
+    patience=5,              # Number of epochs to wait for improvement
+    restore_best_weights=True,  # Restore weights from best epoch
+    mode='min',              # We want to minimize val_loss
+    verbose=1
+) 
+
+def make_lstm_model(num_input_tokens, max_len=None, embedding_dim=64):
     model = Sequential()
     
-    # First LSTM layer - bidirectional for better context
+    # Add embedding layer for proper input handling
+    model.add(Embedding(
+        input_dim=num_input_tokens,
+        output_dim=embedding_dim,
+        input_length=max_len,
+        mask_zero=True,  # Handle variable URL lengths
+        embeddings_initializer='glorot_uniform',
+        name='embedding'
+    ))
+    
+    # First LSTM layer - reduced complexity for URLs
     model.add(Bidirectional(
-        LSTM(256, 
-             input_shape=(None, num_input_tokens),
-             return_sequences=True,  # Return sequences for stacking
-             dropout=0.3,
-             recurrent_dropout=0.3),
+        LSTM(64,  # Reduced from 256
+             return_sequences=True,  # Keep for stacking
+             dropout=0.1,  # Reduced from 0.3
+             recurrent_dropout=0.1,  # Reduced from 0.3
+             kernel_regularizer=l2(1e-4)),
         name='bidirectional_lstm_1'
     ))
     
     # Second LSTM layer
     model.add(Bidirectional(
-        LSTM(128,
+        LSTM(32,  # Reduced from 128
              return_sequences=False,
-             dropout=0.3,
-             recurrent_dropout=0.3),
+             dropout=0.1,  # Reduced from 0.3
+             recurrent_dropout=0.1,  # Reduced from 0.3
+             kernel_regularizer=l2(1e-4)),
         name='bidirectional_lstm_2'
     ))
     
-    # Dense layers with proper regularization
-    model.add(Dense(256, activation='relu', name='dense_1'))
+    # Simplified dense layers for URL classification
+    model.add(Dense(32, activation='relu', kernel_regularizer=l2(1e-4), name='dense_1'))  # Much smaller
     model.add(BatchNormalization())
-    model.add(Dropout(0.5))
+    model.add(Dropout(0.2))  # Reduced from 0.5
     
-    model.add(Dense(128, activation='relu', name='dense_2'))
-    model.add(BatchNormalization())
-    model.add(Dropout(0.4))
+    # Removed extra dense layers - URLs don't need deep processing
     
-    model.add(Dense(64, activation='relu', name='dense_3'))
-    model.add(Dropout(0.3))
+    # Output layer for binary classification
+    model.add(Dense(1, activation='sigmoid', name='output'))  # Binary classification
     
-    # Output layer
-    model.add(Dense(2, activation='softmax', name='output'))
-    
-    # Better optimizer configuration
+    # Optimizer with gradient clipping for LSTM stability
     optimizer = Adam(
         learning_rate=0.001,
         beta_1=0.9,
         beta_2=0.999,
-        epsilon=1e-07
+        epsilon=1e-07,
+        clipnorm=1.0  # Added gradient clipping
     )
     
     model.compile(
         optimizer=optimizer,
-        loss='categorical_crossentropy',
+        loss='binary_crossentropy',  # Binary classification for phishing detection
         metrics=['accuracy', 'precision', 'recall']
     )
     
     return model
-
 
 class LstmPredictor(object):
 
@@ -94,39 +110,39 @@ class LstmPredictor(object):
         self.char2idx = config['char2idx']
 
         self.model = make_lstm_model(self.num_input_tokens)
-        dummy_input = np.zeros((1, 1, self.num_input_tokens))  # Variable length
-        _ = self.model(dummy_input)
+        dummy_input = np.zeros((1, 256), dtype=np.int32)
+        self.model(dummy_input)  # This builds the model
         self.model.load_weights(weight_file_path)
 
     
     def predict(self, url):
-        # Truncate URL if it's longer than max length
-        url_truncated = url[:self.max_url_seq_length]
-        actual_length = len(url_truncated)
-        
-        # Create tensor with actual URL length (not padded to max)
-        X = np.zeros(shape=(1, actual_length, self.num_input_tokens))
-        
-        for idx, c in enumerate(url_truncated):
+        data_size = 1
+        X = np.zeros(shape=(data_size, self.max_url_seq_length))
+        for idx, c in enumerate(url):
             if c in self.char2idx:
-                X[0, idx, self.char2idx[c]] = 1
-        
-        predicted = self.model.predict(X)[0]
-        predicted_label = np.argmax(predicted)
+                X[0, idx] = self.char2idx[c]
+        predicted = self.model.predict(X)[0][0]
+        predicted_label = (predicted >= 0.5).astype(int)
+
         return predicted_label, predicted
+    
     
 
     def extract_training_data(self, url_data):
         data_size = url_data.shape[0]
-        X = np.zeros(shape=(data_size, self.max_url_seq_length, self.num_input_tokens))
-        Y = np.zeros(shape=(data_size, 2))
+        X = np.zeros(shape=(data_size, self.max_url_seq_length), dtype=np.int32)
+        Y = url_data['label'].values
+
+        if not np.issubdtype(Y.dtype, np.number):
+            Y = Y.astype(np.int32)
+
         for i in range(data_size):
             url = url_data['text'][i]
-            label = url_data['label'][i]
             for idx, c in enumerate(url):
-                X[i, idx, self.char2idx[c]] = 1
-            Y[i, label] = 1
-
+                if idx < self.max_url_seq_length:
+                    X[i, idx] = self.char2idx.get(c, self.char2idx.get('<UNK>', 0))
+                else:
+                    break
         return X, Y
 
     def fit(self, text_model, url_data, model_dir_path, batch_size=None, epochs=None,
@@ -154,14 +170,13 @@ class LstmPredictor(object):
         X, Y = self.extract_training_data(url_data)
 
         Xtrain, Xtest, Ytrain, Ytest = train_test_split(X, Y, test_size=test_size, random_state=random_state)
-
         self.model = make_lstm_model(self.num_input_tokens)
 
         with open(self.get_architecture_file_path(model_dir_path), 'wt') as f:
             f.write(self.model.to_json())
 
         history = self.model.fit(Xtrain, Ytrain, batch_size=batch_size, epochs=epochs, verbose=1,
-                                 validation_data=(Xtest, Ytest), callbacks=[checkpoint])
+                                 validation_data=(Xtest, Ytest), callbacks=[checkpoint, early_stopping])
 
         self.model.save_weights(weight_file_path)
 
