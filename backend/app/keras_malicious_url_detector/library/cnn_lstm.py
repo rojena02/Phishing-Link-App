@@ -1,7 +1,8 @@
 import numpy as np
 from keras import Sequential
-from keras.callbacks import ModelCheckpoint
+from keras.callbacks import ModelCheckpoint, EarlyStopping
 from tensorflow.keras.optimizers import Adam
+from keras.regularizers import l2
 from keras.layers import Embedding, SpatialDropout1D, Conv1D, MaxPooling1D, LSTM, Dense, BatchNormalization,Dropout, Bidirectional
 from sklearn.model_selection import train_test_split
 
@@ -9,64 +10,73 @@ NB_LSTM_CELLS = 256
 NB_DENSE_CELLS = 256
 EMBEDDING_SIZE = 100
 
+early_stopping = EarlyStopping(
+    monitor='val_loss',      # Metric to monitor
+    patience=5,              # Number of epochs to wait for improvement
+    restore_best_weights=True,  # Restore weights from best epoch
+    mode='min',              # We want to minimize val_loss
+    verbose=1
+) 
+
 def make_cnn_lstm_model(num_input_tokens, max_len):
     model = Sequential()
     
-    # Embedding layer with better initialization
+    # Embedding layer optimized for URL characters
     model.add(Embedding(
         input_dim=num_input_tokens, 
         input_length=max_len, 
-        output_dim=128,  # Reduced from EMBEDDING_SIZE for efficiency
-        embeddings_initializer='uniform'
+        output_dim=64,  # Smaller for character-level URL tokens
+        mask_zero=True,  # Handle variable URL lengths
+        embeddings_initializer='glorot_uniform'  # Better than uniform
     ))
     
-    # Regularization
-    model.add(SpatialDropout1D(0.3))
+    # Lighter spatial dropout for URL patterns
+    model.add(SpatialDropout1D(0.1))  # Reduced from 0.3
     
-    # Multiple CNN layers for better feature extraction
-    # First conv block
-    model.add(Conv1D(filters=128, kernel_size=3, padding='same', activation='relu'))
+    # Simplified CNN layers - URLs don't need very deep feature extraction
+    # First conv block - capture local patterns like 'paypal', 'secure', etc.
+    model.add(Conv1D(filters=64, kernel_size=3, padding='same', activation='relu'))  # Reduced filters
     model.add(BatchNormalization())
     model.add(MaxPooling1D(pool_size=2))
-    model.add(Dropout(0.2))
+    model.add(Dropout(0.1))  # Reduced from 0.2
     
     # Second conv block with different kernel size
-    model.add(Conv1D(filters=256, kernel_size=5, padding='same', activation='relu'))
+    model.add(Conv1D(filters=128, kernel_size=5, padding='same', activation='relu'))  # Reduced filters
     model.add(BatchNormalization())
     model.add(MaxPooling1D(pool_size=2))
-    model.add(Dropout(0.3))
+    model.add(Dropout(0.1))  # Reduced from 0.3
     
-    # Third conv block for more complex patterns
-    model.add(Conv1D(filters=512, kernel_size=3, padding='same', activation='relu'))
+    # Removed third conv block - too deep for URLs
+    
+    # Single Bidirectional LSTM - URLs don't need very deep sequence modeling
+    model.add(Bidirectional(LSTM(
+        64,  # Reduced from 256
+        return_sequences=False,  # Changed to False since we removed second LSTM
+        dropout=0.1,  # Added LSTM dropout
+        recurrent_dropout=0.1,
+        kernel_regularizer=l2(1e-4)
+    )))
+    model.add(Dropout(0.2))  # Reduced from 0.4
+    
+    # Simplified dense layers
+    model.add(Dense(32, activation='relu', kernel_regularizer=l2(1e-4)))  # Much smaller
     model.add(BatchNormalization())
-    model.add(Dropout(0.3))
+    model.add(Dropout(0.2))  # Reduced from 0.5
     
-    # Bidirectional LSTM for better context understanding
-    model.add(Bidirectional(LSTM(256, return_sequences=True)))
-    model.add(Dropout(0.4))
+    # Output layer for binary classification
+    model.add(Dense(units=1, activation='sigmoid'))  # Binary classification
     
-    # Second LSTM layer
-    model.add(Bidirectional(LSTM(128)))
-    model.add(Dropout(0.4))
-    
-    # Dense layers with regularization
-    model.add(Dense(256, activation='relu'))
-    model.add(BatchNormalization())
-    model.add(Dropout(0.5))
-    
-    model.add(Dense(64, activation='relu'))
-    model.add(Dropout(0.3))
-    
-    # Output layer
-    model.add(Dense(units=2, activation='softmax'))
-    
-    # Better optimizer and learning rate scheduling
-
-    optimizer = Adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999)
+    # Optimizer with gradient clipping for stability
+    optimizer = Adam(
+        learning_rate=0.001, 
+        beta_1=0.9, 
+        beta_2=0.999,
+        clipnorm=1.0  # Added gradient clipping
+    )
     
     model.compile(
         optimizer=optimizer, 
-        loss='categorical_crossentropy', 
+        loss='binary_crossentropy',  # Binary classification for phishing detection
         metrics=['accuracy', 'precision', 'recall']
     )
     
@@ -109,28 +119,34 @@ class CnnLstmPredictor(object):
 
         self.model.load_weights(weight_file_path)
 
+
     def predict(self, url):
         data_size = 1
         X = np.zeros(shape=(data_size, self.max_url_seq_length))
         for idx, c in enumerate(url):
             if c in self.char2idx:
                 X[0, idx] = self.char2idx[c]
-        predicted = self.model.predict(X)[0]
-        predicted_label = np.argmax(predicted)
+        predicted = self.model.predict(X)[0][0]
+        predicted_label = (predicted >= 0.5).astype(int)
+
         return predicted_label, predicted
     
 
     def extract_training_data(self, url_data):
         data_size = url_data.shape[0]
-        X = np.zeros(shape=(data_size, self.max_url_seq_length))
-        Y = np.zeros(shape=(data_size, 2))
+        X = np.zeros(shape=(data_size, self.max_url_seq_length), dtype=np.int32)
+        Y = url_data['label'].values
+
+        if not np.issubdtype(Y.dtype, np.number):
+            Y = Y.astype(np.int32)
+
         for i in range(data_size):
             url = url_data['text'][i]
-            label = url_data['label'][i]
             for idx, c in enumerate(url):
-                X[i, idx] = self.char2idx[c]
-            Y[i, label] = 1
-
+                if idx < self.max_url_seq_length:
+                    X[i, idx] = self.char2idx.get(c, self.char2idx.get('<UNK>', 0))
+                else:
+                    break
         return X, Y
 
     def fit(self, text_model, url_data, model_dir_path, batch_size=None, epochs=None,
@@ -165,7 +181,7 @@ class CnnLstmPredictor(object):
             f.write(self.model.to_json())
 
         history = self.model.fit(Xtrain, Ytrain, batch_size=batch_size, epochs=epochs, verbose=1,
-                                 validation_data=(Xtest, Ytest), callbacks=[checkpoint])
+                                 validation_data=(Xtest, Ytest), callbacks=[checkpoint, early_stopping])
 
         self.model.save_weights(weight_file_path)
 

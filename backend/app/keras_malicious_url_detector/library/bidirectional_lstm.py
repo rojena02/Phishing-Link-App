@@ -2,75 +2,82 @@ import numpy as np
 from keras.layers import Embedding, SpatialDropout1D, LSTM, Bidirectional, Dense,BatchNormalization, Dropout
 from keras.optimizers import Adam
 from sklearn.model_selection import train_test_split
-
+from keras.regularizers import l2
 from keras.models import Sequential
-from keras.callbacks import ModelCheckpoint
+from keras.callbacks import ModelCheckpoint, EarlyStopping
 
 NB_LSTM_CELLS = 256
 NB_DENSE_CELLS = 256
 EMBEDDING_SIZE = 281
+
+early_stopping = EarlyStopping(
+    monitor='val_loss',      # Metric to monitor
+    patience=5,              # Number of epochs to wait for improvement
+    restore_best_weights=True,  # Restore weights from best epoch
+    mode='min',              # We want to minimize val_loss
+    verbose=1
+) 
 def make_bidirectional_lstm_model(
         num_input_tokens, 
-        embedding_dim=128,  # Reduced from 281 for efficiency
-        lstm_units=256, 
-        output_dim=2
+        max_url_seq_length=256,
+        embedding_dim=64,  # Smaller for character-level URL tokens
+        lstm_units=128,    # Keep your original size but could be smaller
+        output_dim=1       # Binary classification: phishing or not
 ):
     model = Sequential([
-        # Embedding layer with better configuration
+        # Embedding layer optimized for URL characters
         Embedding(
             input_dim=num_input_tokens,
             output_dim=embedding_dim,
-            input_length=None,
-            embeddings_initializer='uniform',
+            input_length=max_url_seq_length,
+            mask_zero=True,  # Important: handle variable URL lengths
+            embeddings_initializer='glorot_uniform',  # Better than uniform
             name='embedding'
         ),
         
-        # Spatial dropout for embedding regularization
-        SpatialDropout1D(0.3),
+        # Lighter spatial dropout for URL patterns
+        SpatialDropout1D(0.1),  # Reduced from 0.3
         
         # First bidirectional LSTM layer
         Bidirectional(LSTM(
             units=lstm_units,
-            return_sequences=True,  # Enable stacking
-            dropout=0.3,
-            recurrent_dropout=0.3,
-            kernel_regularizer='l2'
+            return_sequences=True,
+            dropout=0.1,  # Reduced from 0.3
+            recurrent_dropout=0.1,  # Reduced from 0.3
+            kernel_regularizer=l2(1e-4)  # Lighter regularization
         ), name='bidirectional_lstm_1'),
         
         # Second bidirectional LSTM layer
         Bidirectional(LSTM(
-            units=lstm_units // 2,  # Reduce size for second layer
+            units=lstm_units // 2,
             return_sequences=False,
-            dropout=0.3,
-            recurrent_dropout=0.3,
-            kernel_regularizer='l2'
+            dropout=0.1,  # Reduced from 0.3
+            recurrent_dropout=0.1,  # Reduced from 0.3
+            kernel_regularizer=l2(1e-4)  # Lighter regularization
         ), name='bidirectional_lstm_2'),
         
-        # Dense layers with regularization
-        Dense(512, activation='relu', name='dense_1'),
+        # Simplified dense layers - URLs don't need deep processing
+        Dense(64, activation='relu', name='dense_1'),  # Much smaller
         BatchNormalization(),
-        Dropout(0.5),
+        Dropout(0.2),  # Reduced from 0.5
         
-        Dense(256, activation='relu', name='dense_2'),
-        BatchNormalization(),
-        Dropout(0.4),
+        Dense(32, activation='relu', name='dense_2'),  # Smaller
+        Dropout(0.1),  # Reduced from 0.4
         
-        Dense(128, activation='relu', name='dense_3'),
-        Dropout(0.3),
-        
-        # Output layer
-        Dense(output_dim, activation='softmax', name='output')
+        # Output layer for binary classification
+        Dense(output_dim, activation='sigmoid', name='output')  # sigmoid for binary
     ])
     
-    # Better optimizer configuration
+    # Updated optimizer and loss for binary classification
     model.compile(
         optimizer=Adam(
             learning_rate=0.001,
             beta_1=0.9,
             beta_2=0.999,
-            epsilon=1e-07
+            epsilon=1e-07,
+            clipnorm=1.0  # Added gradient clipping for LSTM stability
         ),
-        loss='categorical_crossentropy',
+        loss='binary_crossentropy',  # Changed from categorical
         metrics=['accuracy', 'precision', 'recall']
     )
     
@@ -105,21 +112,18 @@ class BidirectionalLstmEmbedPredictor(object):
 
         config = np.load(config_file_path, allow_pickle=True).item()
         self.num_input_tokens = config['num_input_tokens']
-        self.max_url_seq_length = config['max_url_seq_length']
+        self.max_url_seq_length = int(config['max_url_seq_length'])
         self.idx2char = config['idx2char']
         self.char2idx = config['char2idx']
-        embedding_size = config.get('embedding_size', 281)  # Using 281 as it matches your saved weights
 
         # Create model
         self.model = make_bidirectional_lstm_model(
-            num_input_tokens=self.num_input_tokens,
-            embedding_dim=EMBEDDING_SIZE,
-            lstm_units=NB_LSTM_CELLS,
-            output_dim=2
+            num_input_tokens=self.num_input_tokens
         )
-        
-        # Build the model by calling it once with dummy data
-        dummy_input = np.zeros((1, self.max_url_seq_length))
+        # # Build the model by calling it once with dummy data
+        dummy_input = np.zeros((1, 256), dtype=np.int32)
+        print(f"DEBUG: dummy_input shape BEFORE model call: {dummy_input.shape}")
+
         self.model(dummy_input)  # This builds the model
         # Now load weights
         self.model.load_weights(weight_file_path)
@@ -131,24 +135,28 @@ class BidirectionalLstmEmbedPredictor(object):
         for idx, c in enumerate(url):
             if c in self.char2idx:
                 X[0, idx] = self.char2idx[c]
-        predicted = self.model.predict(X)[0]
-        predicted_label = np.argmax(predicted)
+        predicted = self.model.predict(X)[0][0]
+        predicted_label = (predicted >= 0.5).astype(int)
+
         return predicted_label, predicted
     
     
-
     def extract_training_data(self, url_data):
-        data_size = url_data.shape[0]
-        X = np.zeros(shape=(data_size, self.max_url_seq_length))
-        Y = np.zeros(shape=(data_size, 2))
-        for i in range(data_size):
-            url = url_data['text'][i]
-            label = url_data['label'][i]
-            for idx, c in enumerate(url):
-                X[i, idx] = self.char2idx[c]
-            Y[i, label] = 1
+            data_size = url_data.shape[0]
+            X = np.zeros(shape=(data_size, self.max_url_seq_length), dtype=np.int32)
+            Y = url_data['label'].values
 
-        return X, Y
+            if not np.issubdtype(Y.dtype, np.number):
+                Y = Y.astype(np.int32)
+   
+            for i in range(data_size):
+                url = url_data['text'][i]
+                for idx, c in enumerate(url):
+                    if idx < self.max_url_seq_length:
+                        X[i, idx] = self.char2idx.get(c, self.char2idx.get('<UNK>', 0))
+                    else:
+                        break
+            return X, Y
 
     def fit(self, text_model, url_data, model_dir_path, batch_size=None, epochs=None,
             test_size=None, random_state=None):
@@ -179,13 +187,13 @@ class BidirectionalLstmEmbedPredictor(object):
 
         Xtrain, Xtest, Ytrain, Ytest = train_test_split(X, Y, test_size=test_size, random_state=random_state)
 
-        self.model = make_bidirectional_lstm_model(self.num_input_tokens, self.max_url_seq_length)
+        self.model = make_bidirectional_lstm_model(self.num_input_tokens)
 
         with open(self.get_architecture_file_path(model_dir_path), 'wt') as f:
             f.write(self.model.to_json())
 
         history = self.model.fit(Xtrain, Ytrain, batch_size=batch_size, epochs=epochs, verbose=1,
-                                 validation_data=(Xtest, Ytest), callbacks=[checkpoint])
+                                 validation_data=(Xtest, Ytest), callbacks=[checkpoint, early_stopping])
 
         self.model.save_weights(weight_file_path)
 

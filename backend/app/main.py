@@ -3,11 +3,11 @@ from keras_malicious_url_detector.library.bidirectional_lstm import Bidirectiona
 from keras_malicious_url_detector.library.cnn_lstm import CnnLstmPredictor
 from keras_malicious_url_detector.library.lstm import LstmPredictor
 from fastapi import FastAPI
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 
 class URLData(BaseModel): 
-    url: HttpUrl
+    url: str
 
 app = FastAPI(title="Phishing Link Detection Backend")
 
@@ -29,29 +29,31 @@ lstm_predictor.load_model(model_dir_path)
    
 @app.post('/predict')
 def predict_phishing(url_data: URLData):
-    url = str(url_data.url)
-    bidirection_predict, bidirection_predicted = bidirectional_lstm_predictor.predict(url)
+
+    url = url_data.url
+    bidirection_predict, percentage_phishing = bidirectional_lstm_predictor.predict(url)
     cnn_predict, cnn_predicted = cnn_lstm_predictor.predict(url)
     lstm_predict, lstm_predicted = lstm_predictor.predict(url)
-
+    print(bidirection_predict, percentage_phishing)
+    
     model_mapping = [
         {
             "model":"bidirectional_lstm",
             "is_phishing": True if bidirection_predict else False,
-            "phishing_prediction": round(bidirection_predicted[-1] * 100,2),
-            "non_phishing_prediction": round(bidirection_predicted[0] * 100,2)
+            "phishing_prediction": round(percentage_phishing * 100,2),
+            "non_phishing_prediction": round((1 -  percentage_phishing) * 100,2)
         },
         {
             "model":"cnn",
             "is_phishing": True if cnn_predict else False,
-            "phishing_prediction": round(cnn_predicted[-1] * 100,2),
-            "non_phishing_prediction": round(cnn_predicted[0] * 100,2)
+            "phishing_prediction": round(cnn_predicted * 100,2),
+            "non_phishing_prediction": round((1 - cnn_predicted) * 100,2)
         },
         {
             "model":"lstm",
             "is_phishing": True if lstm_predict else False,
-            "phishing_prediction": round(lstm_predicted[-1] * 100,2),
-            "non_phishing_prediction": round(lstm_predicted[0] * 100,2)
+            "phishing_prediction": round(lstm_predicted * 100,2),
+            "non_phishing_prediction": round((1-lstm_predicted) * 100,2)
         }
     ]
     return {
