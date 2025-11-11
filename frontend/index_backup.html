@@ -17,56 +17,37 @@
     href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i|Krub:300,300i,400,400i,500,500i,600,600i,700,700i|Poppins:300,300i,400,400i,500,500i,600,600i,700,700i"
     rel="stylesheet" />
 
-  <!-- Bootstrap CSS from CDN -->
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet" />
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+  <!-- Vendor CSS Files -->
+  <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="assets/vendor/icofont/icofont.min.css" rel="stylesheet" />
+  <link href="assets/vendor/boxicons/css/boxicons.min.css" rel="stylesheet" />
+  <link href="assets/vendor/owl.carousel/assets/owl.carousel.min.css" rel="stylesheet" />
+  <link href="assets/vendor/venobox/venobox.css" rel="stylesheet" />
+  <link href="assets/vendor/aos/aos.css" rel="stylesheet" />
 
+  <!--==================== SWIPER CSS ====================-->
+  <link rel="stylesheet" href="assets/css/swiper-bundle.min.css" />
+
+  <!-- Template Main CSS File -->
+  <link href="assets/css/style.css" rel="stylesheet" />
   <style>
-    html, body {
-      height: auto;
-      overflow-x: hidden;
-      overflow-y: auto;
-    }
-    
-    #home {
-      padding-top: 80px;
-      padding-bottom: 80px;
-    }
-    
-    .back-to-top {
-      position: fixed;
-      bottom: 20px;
-      right: 15px;
-      display: block;
-      z-index: 1000;
-    }
-    
-    /* Remove underline from logo link */
-    .logo a {
-      text-decoration: none !important;
-    }
-    
-    .logo a:hover {
-      text-decoration: none !important;
-    }
-    
-    /* Make search box larger */
-    #name {
-      width: 500px;
-      max-width: 100%;
-      padding: 12px 15px;
-      font-size: 16px;
-    }
-    
-    /* Make image smaller */
-    .home-img {
-      max-width: 600px;
-      width: 100%;
-      height: auto;
-    }
-    
-    /* Fix for About section visibility */
-    #about {
+  html, body {
+    height: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+  #home {
+  padding-top: 80px;
+  padding-bottom: 80px;
+}
+.back-to-top {
+  position: fixed;
+  bottom: 20px;
+  right: 15px;
+  display: block;
+  z-index: 1000;
+}
+ #about {
       background-color: #1b2e35;
       color: white;
     }
@@ -82,14 +63,12 @@
       line-height: 1.6;
       text-align: justify;
     }
-    
-    /* Ensure model results stay in single row and centered */
     #model-bars {
       display: flex;
       flex-wrap: nowrap;
+      overflow-x: auto;
       gap: 20px;
       padding: 20px 0;
-      justify-content: center;
     }
     
     .model-box {
@@ -114,9 +93,7 @@
     .model-box.regular-model {
       background: #f9f9f9;
       border: 1px solid #ddd;
-    }
-    
-    /* Responsive adjustments */
+    } 
     @media (max-width: 768px) {
       #model-bars {
         flex-wrap: wrap;
@@ -127,22 +104,23 @@
         margin-bottom: 15px;
       }
     }
-  </style>
+  
+</style>
 </head>
 
 <body>
   <!-- ======= Header ======= -->
   <header id="header" class="fixed-top" style="background-color: #1b2e35">
     <div class="container d-flex align-items-center">
-      <h1 class="logo me-auto">
+      <h1 class="logo mr-auto">
         <a href="index.html" style="color: white">Phishing Link Detection System</a>
       </h1>
       <nav class="nav-menu d-none d-lg-block">
-        <ul class="d-flex list-unstyled m-0">
-          <li class="me-4">
-            <a href="#header" style="color: white; text-decoration: none;">Home</a>
+        <ul>
+          <li class="active">
+            <a href="#header" style="color: white">Home</a>
           </li>
-          <li><a href="#about" style="color: white; text-decoration: none;">About</a></li>
+          <li><a href="#about" style="color: white">About</a></li>
         </ul>
       </nav>
     </div>
@@ -151,32 +129,26 @@
 
   <!-- ======= Home Section ======= -->
   <section id="home" class="home">
-    <div class="container d-flex flex-column align-items-center justify-content-center">
+    <div class="container d-flex flex-column align-items-center justify-content-center" data-aos="fade-up">
       <h1>Detect Phishing</h1>
       <form action="" method="post" role="form" class="form">
-        <div class="row justify-content-center">
-          <div class="form-group">
+        <div class="row no-gutters">
+          <div class="col-md-6 form-group pr-md-1">
             <input type="text" name="name" class="form-control" id="name"
               placeholder="Enter a URL link in format http or https and should contain www" />
           </div>
         </div>
-        <div class="text-center mt-3">
-          <button id="predict" class="btn btn-danger me-2" onclick="predictURL()" type="button">
+        <div class="text-center">
+          <button id="predict" class="btn btn-danger" onclick="predictURL()" type="button">
             Predict
           </button>
-          <button id="reset" class="btn btn-primary me-2" onclick="resetPage()" type="button">
+          <button id="reset" class="btn btn-primary" onclick="resetPage()" type="button">
             Reset
           </button>
-          <p></p>
-          <!-- <div class="ms-3">
-            <label for="threshold" class="form-label me-2 mb-0">Phishing Threshold:</label>
-            <input type="number" id="threshold" class="form-control" value="30" min="1" max="99" style="width: 80px; display: inline-block;">
-            <span class="ms-1">%</span>
-          </div> -->
         </div>
       </form>
-      
-      <div class="align-items-center result-container mt-4" style="display: none">
+      <div>
+      <div class="result-container" style="display: none">
         <p>
           Prediction:
           <span id="prediction-result" style="font-weight: bold"></span>
@@ -186,35 +158,35 @@
           <span id="phishing-probability" style="font-weight: bold"></span>
         </p>
       </div>
-      
-      <div class="align-items-center proceed-button mt-3" style="display: none">
+      <br />
+      <div class="proceed-button" style="display: none">
         <button id="proceed-btn" class="btn btn-danger" onclick="proceedURL()" type="button">
           Proceed
         </button>
       </div>
-      
-      <div id="model-results" style="display: none; padding: 1px 1px; margin-top: 10px;" class="container-fluid text-center">
-        <h4 class="text-dark mb-4">Model Predictions</h4>
-        <div class="d-flex justify-content-center">
-          <div id="model-bars"></div>
-        </div>
+      <div id="model-results" style="display: none; padding: 30px 15px; margin-top: 40px;"
+        class="container text-center">
+        <h4 class="text-white mb-4">Model Predictions</h4>
+        <div id="model-bars" class="row justify-content-center gap-4"
+          style="row-gap: 30px; column-gap: 30px;"></div>
       </div>
-      
-      <img src="assets/img/home.jpg" class="img-fluid home-img mt-4" alt="" />
+      </div>
+      <img src="assets/img/home.jpg" class="img-fluid home-img" alt="" data-aos="zoom-in" data-aos-delay="400" />
     </div>
   </section>
+
   <!-- End home -->
 
   <main id="main">
     <!-- ======= about Section ======= -->
-    <section id="about" class="about py-5">
+    <section id="about" class="about py-5" style="background-color: #1b2e35">
       <div class="container">
         <div class="section-title">
           <h2>About Phishing Link Detection System</h2>
           <div class="about-description">
             <p>
-              Phishing Link Detection System is a eight semester project for
-              "Detection of Phishing Website Using Machine (Deep) Learning".
+              Phishing Link Detection System is an eight semester project for
+              “Detection of Phishing Website Using Machine (Deep) Learning”.
               It aims to help reduce phishing attack by helping internet users
               authenticate URL link by testing if it is phishing or
               legitimate. The progress of validating a Website URL for
@@ -260,16 +232,18 @@
       </div>
     </section>
     <!-- End about Section -->
+
+    <!-- ======= Usecases ======= -->
   </main>
   <!-- End #main -->
 
   <!-- ======= Footer ======= -->
-  <footer id="footer" class="py-4" style="background-color: #f8f9fa;">
-    <div class="container">
-      <div class="text-center">
+  <footer id="footer">
+    <div class="container d-md-flex">
+      <div class="text-center text-md-center">
         <div class="copyright">
-          <p style="padding-top: 8px; font-weight: 600; margin: 0;">
-            8th Semester Project &copy; 2025. All Rights Reserved
+          <p style="padding-top: 8px; font-weight: 600">
+            8th Semester Project &copy; 2024. All Rights Reserved
           </p>
         </div>
       </div>
@@ -277,11 +251,24 @@
   </footer>
   <!-- End Footer -->
 
-  <a href="#" class="back-to-top"><i class="fas fa-arrow-up"></i></a>
+  <a href="#" class="back-to-top"><i class="icofont-simple-up"></i></a>
+  <!-- <div id="preloader"></div> -->
 
-  <!-- Bootstrap JS from CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+  <!-- Vendor JS Files -->
+  <script src="assets/vendor/jquery/jquery.min.js"></script>
+  <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="assets/vendor/jquery.easing/jquery.easing.min.js"></script>
+  <script src="assets/vendor/php-email-form/validate.js"></script>
+  <script src="assets/vendor/owl.carousel/owl.carousel.min.js"></script>
+  <script src="assets/vendor/isotope-layout/isotope.pkgd.min.js"></script>
+  <script src="assets/vendor/venobox/venobox.min.js"></script>
+  <script src="assets/vendor/aos/aos.js"></script>
 
+  <!--==================== SWIPER JS ====================-->
+  <script src="assets/js/swiper-bundle.min.js"></script>
+
+  <!-- Template Main JS File -->
+  <script src="assets/js/main.js"></script>
   <script>
     function predictURL() {
       var url = document.getElementById("name").value;
@@ -315,80 +302,65 @@
               var proceedBtnClass = document.querySelector(".proceed-button");
               var proceedBtn = document.getElementById("proceed-btn");
 
-              // Get threshold value
-              // const threshold = parseFloat(document.getElementById("threshold").value);
+              // Find best model by highest absolute confidence
+              let bestModel = data.model_mapping.reduce((prev, curr) => {
+                return Math.abs(curr.phishing_prediction - curr.non_phishing_prediction) >
+                  Math.abs(prev.phishing_prediction - prev.non_phishing_prediction)
+                  ? curr
+                  : prev;
+              });
 
-              // Find bidirectional LSTM model (main model for primary result)
-              const bidirectionalModel = data.model_mapping.find(model => 
-                model.model === "bidirectional_lstm"
-              );
+              predictionResult.textContent = bestModel.is_phishing
+                ? "Suspicious"
+                : "Non-Suspicious";
 
-              // Use bidirectional LSTM as primary decision maker
-              const primaryModel = bidirectionalModel || data.model_mapping[0]; // fallback to first model
-              const finalDecision = primaryModel.is_phishing;
-              
-              // Check if bidirectional LSTM exceeds threshold
-              // const exceedsThreshold = primaryModel.phishing_prediction > threshold;
-              
-              predictionResult.textContent = finalDecision ? "Suspicious" : "Non-Suspicious";
-              phishingProbability.textContent = primaryModel.phishing_prediction.toFixed(2) + "%";
+              phishingProbability.textContent = bestModel.phishing_prediction + "%";
 
-              if (finalDecision) {
-                predictionResult.style.color = "#dc3545";
+              if (bestModel.is_phishing) {
+                predictionResult.classList.add("phishing");
                 proceedBtn.className = "btn btn-danger";
                 proceedBtn.innerText = "Proceed With Caution";
               } else {
-                predictionResult.style.color = "#198754";
                 proceedBtn.className = "btn btn-success";
                 proceedBtn.innerText = "Proceed";
               }
 
-              // Add decision reason
-              const existingReason = document.getElementById("decision-reason");
-              if (existingReason) existingReason.remove();
-              
-              const reasonElement = document.createElement("p");
-              reasonElement.id = "decision-reason";
-              reasonElement.innerHTML = `<small style="color: #666;">Primary model: ${primaryModel.model.toUpperCase()}</small>`;
-              resultContainer.appendChild(reasonElement);
-
               proceedBtnClass.style.display = "block";
               resultContainer.style.display = "block";
 
-              // Display all model bars in single row
+              // Display all model bars
               const modelBars = document.getElementById("model-bars");
               const modelResultsContainer = document.getElementById("model-results");
               modelBars.innerHTML = "";
 
               data.model_mapping.forEach((model) => {
-                const isBidirectional = model.model === "bidirectional_lstm";
-                // const exceedsThreshold = model.phishing_prediction > threshold;
+                const isBest = model.model === bestModel.model;
 
                 const modelBox = document.createElement("div");
-                modelBox.className = isBidirectional ? "model-box best-model" : "model-box regular-model";
-                
-                // Add threshold indicator
-                // if (exceedsThreshold) {
-                //   modelBox.style.borderColor = "#dc3545";
-                //   modelBox.style.borderWidth = "2px";
-                // }
-                // ${exceedsThreshold ? "" : ""}
+modelBox.className = "col-12 col-md-5 col-lg-4 p-4 rounded shadow";
+                modelBox.style.width = "320px";
+                modelBox.style.background = isBest ? "#e9fce9" : "#f9f9f9";
+                modelBox.style.border = isBest ? "2px solid #198754" : "1px solid #ddd";
+                modelBox.style.boxShadow = "0 2px 10px rgba(0, 0, 0, 0.1)";
+                modelBox.style.transition = "transform 0.3s ease";
+                modelBox.style.marginBottom = "20px";
+                modelBox.onmouseover = () => modelBox.style.transform = "scale(1.03)";
+                modelBox.onmouseout = () => modelBox.style.transform = "scale(1)";
 
 
                 modelBox.innerHTML = `
-                  <div class="fw-bold mb-2" style="color: ${isBidirectional ? '#155724' : '#333'}">
-                    ${model.model.toUpperCase()} ${isBidirectional ? "(PRIMARY)" : ""}  
-                  </div>
-                  <div class="progress" style="height: 20px;">
-                    <div class="progress-bar bg-danger" role="progressbar" style="width: ${model.phishing_prediction}%;">
-                      Phishing ${model.phishing_prediction.toFixed(2)}%
-                    </div>
-                    <div class="progress-bar bg-success" role="progressbar" style="width: ${model.non_phishing_prediction}%;">
-                      Legit ${model.non_phishing_prediction.toFixed(2)}%
-                    </div>
-                  </div>
-                  ${isBidirectional ? '<small class="text-success mt-1 d-block">Primary model result</small>' : ''}
-                `;
+    <div class="fw-bold mb-2" style="color: ${isBest ? '#155724' : '#333'}">
+      ${model.model.toUpperCase()} ${isBest ? "✅" : ""}
+    </div>
+    <div class="progress" style="height: 20px;">
+      <div class="progress-bar bg-danger" role="progressbar" style="width: ${model.phishing_prediction}%;">
+        Phishing ${model.phishing_prediction.toFixed(1)}%
+      </div>
+      <div class="progress-bar bg-success" role="progressbar" style="width: ${model.non_phishing_prediction}%;">
+        Legit ${model.non_phishing_prediction.toFixed(1)}%
+      </div>
+    </div>
+  `;
 
                 modelBars.appendChild(modelBox);
               });
