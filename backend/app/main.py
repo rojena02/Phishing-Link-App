@@ -38,7 +38,7 @@ cnn_lstm_predictor.load_model(model_dir_path)
 lstm_predictor.load_model(model_dir_path)
    
 @app.post('/predict')
-def predict_phishing(url_data: URLData, current_user=Depends(get_current_user)):
+def predict_phishing(url_data: URLData):
     url = url_data.url
     bidirection_predict, percentage_phishing = bidirectional_lstm_predictor.predict(url)
     cnn_predict, cnn_predicted = cnn_lstm_predictor.predict(url)

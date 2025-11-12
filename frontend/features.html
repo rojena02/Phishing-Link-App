@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>Phishing Link Detection System</title>
+
+  <!-- Favicons -->
+  <link href="assets/img/mainlogo.jpeg" rel="icon" />
+
+  <!--==================== UNICONS ====================-->
+  <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css" />
+
+  <!-- Google Fonts -->
+  <link
+    href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i|Krub:300,300i,400,400i,500,500i,600,600i,700,700i|Poppins:300,300i,400,400i,500,500i,600,600i,700,700i"
+    rel="stylesheet" />
+
+  <!-- Bootstrap CSS from CDN -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+
+  <style>
+    html, body {
+      height: auto;
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
+    
+    #home {
+      padding-top: 80px;
+      padding-bottom: 80px;
+    }
+    
+    .back-to-top {
+      position: fixed;
+      bottom: 20px;
+      right: 15px;
+      display: block;
+      z-index: 1000;
+    }
+    
+    /* Remove underline from logo link */
+    .logo a {
+      text-decoration: none !important;
+    }
+    
+    .logo a:hover {
+      text-decoration: none !important;
+    }
+    
+    /* Make search box larger */
+    #name {
+      width: 500px;
+      max-width: 100%;
+      padding: 12px 15px;
+      font-size: 16px;
+    }
+    
+    /* Make image smaller */
+    .home-img {
+      max-width: 600px;
+      width: 100%;
+      height: auto;
+    }
+    
+    /* Fix for About section visibility */
+    #about {
+      background-color: #1b2e35;
+      color: white;
+    }
+    
+    #about .section-title h2 {
+      color: white;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    
+    #about .about-description p {
+      color: white;
+      line-height: 1.6;
+      text-align: justify;
+    }
+    
+    /* Ensure model results stay in single row and centered */
+    #model-bars {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 20px;
+      padding: 20px 0;
+      justify-content: center;
+    }
+    
+    .model-box {
+      min-width: 280px;
+      flex-shrink: 0;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease;
+      margin-bottom: 0;
+    }
+    
+    .model-box:hover {
+      transform: scale(1.03);
+    }
+    
+    .model-box.best-model {
+      background: #e9fce9;
+      border: 2px solid #198754;
+    }
+    
+    .model-box.regular-model {
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      #model-bars {
+        flex-wrap: wrap;
+      }
+      
+      .model-box {
+        min-width: 100%;
+        margin-bottom: 15px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- ======= Header ======= -->
+  <header id="header" class="fixed-top" style="background-color: #1b2e35">
+    <div class="container d-flex align-items-center">
+      <h1 class="logo me-auto">
+        <a href="index.html" style="color: white">Phishing Link Detection System</a>
+      </h1>
+      <nav class="nav-menu d-none d-lg-block">
+        <ul class="d-flex list-unstyled m-0">
+          <li class="me-4">
+            <a href="#header" style="color: white; text-decoration: none;">Home</a>
+          </li>
+          <li><a href="#about" style="color: white; text-decoration: none;">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+  <!-- End Header -->
+
+  <!-- ======= Home Section ======= -->
+  <section id="home" class="home">
+    <div class="container d-flex flex-column align-items-center justify-content-center">
+      <h1>Detect Phishing</h1>
+      <form action="" method="post" role="form" class="form">
+        <div class="row justify-content-center">
+          <div class="form-group">
+            <input type="text" name="name" class="form-control" id="name"
+              placeholder="Enter a URL link in format http or https and should contain www" />
+          </div>
+        </div>
+        <div class="text-center mt-3">
+          <button id="predict" class="btn btn-danger me-2" onclick="predictURL()" type="button">
+            Predict
+          </button>
+          <button id="reset" class="btn btn-primary me-2" onclick="resetPage()" type="button">
+            Reset
+          </button>
+          <p></p>
+          <!-- <div class="ms-3">
+            <label for="threshold" class="form-label me-2 mb-0">Phishing Threshold:</label>
+            <input type="number" id="threshold" class="form-control" value="30" min="1" max="99" style="width: 80px; display: inline-block;">
+            <span class="ms-1">%</span>
+          </div> -->
+        </div>
+      </form>
+      
+      <div class="align-items-center result-container mt-4" style="display: none">
+        <p>
+          Prediction:
+          <span id="prediction-result" style="font-weight: bold"></span>
+        </p>
+        <p>
+          Phishing Probability:
+          <span id="phishing-probability" style="font-weight: bold"></span>
+        </p>
+      </div>
+      
+      <div class="align-items-center proceed-button mt-3" style="display: none">
+        <button id="proceed-btn" class="btn btn-danger" onclick="proceedURL()" type="button">
+          Proceed
+        </button>
+      </div>
+      
+      <div id="model-results" style="display: none; padding: 1px 1px; margin-top: 10px;" class="container-fluid text-center">
+        <h4 class="text-dark mb-4">Model Predictions</h4>
+        <div class="d-flex justify-content-center">
+          <div id="model-bars"></div>
+        </div>
+      </div>
+      
+      <img src="assets/img/home.jpg" class="img-fluid home-img mt-4" alt="" />
+    </div>
+  </section>
+  <!-- End home -->
+
+  <main id="main">
+    <!-- ======= about Section ======= -->
+    <section id="about" class="about py-5">
+      <div class="container">
+        <div class="section-title">
+          <h2>About Phishing Link Detection System</h2>
+          <div class="about-description">
+            <p>
+              Phishing Link Detection System is a eight semester project for
+              "Detection of Phishing Website Using Machine (Deep) Learning".
+              It aims to help reduce phishing attack by helping internet users
+              authenticate URL link by testing if it is phishing or
+              legitimate. The progress of validating a Website URL for
+              phishing or legitimate has gone through several layers of LSTM
+              model. This project aims to develop a machine learning model
+              that can detect phishing websites automatically. Phishing
+              websites are fraudulent websites that mimic legitimate websites
+              to trick users into providing sensitive information such as
+              login credentials, credit card details, or personal information.
+            </p>
+            <br />
+            <p>
+              The machine learning model has be trained on a dataset of known
+              phishing websites and legitimate websites to learn the
+              characteristics and patterns that differentiate them. Features
+              such as the website's URL, domain name, content will be
+              extracted by the model and used as input to the machine learning
+              algorithm.
+            </p>
+            <br />
+            <p>
+              Once trained, the model is be able to classify new websites as
+              either legitimate or phishing based on their features. The model
+              will be evaluated using metrics such as accuracy, precision to
+              assess its performance.
+            </p>
+            <br />
+            <p>
+              The project involves data collection, preprocessing, model
+              selection, and evaluation. The programming language used is
+              Python, and popular machine learning libraries such as
+              Tensorflow, numpy, pandas and matplotlib have be used for model
+              development and training.
+            </p>
+            <br />
+            <p>
+              The goal of this project is to develop an effective and
+              efficient solution for detecting phishing websites to improve
+              online security and protect users from fraud and identity theft.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- End about Section -->
+  </main>
+  <!-- End #main -->
+
+  <!-- ======= Footer ======= -->
+  <footer id="footer" class="py-4" style="background-color: #f8f9fa;">
+    <div class="container">
+      <div class="text-center">
+        <div class="copyright">
+          <p style="padding-top: 8px; font-weight: 600; margin: 0;">
+            8th Semester Project &copy; 2025. All Rights Reserved
+          </p>
+        </div>
+      </div>
+    </div>
+  </footer>
+  <!-- End Footer -->
+
+  <a href="#" class="back-to-top"><i class="fas fa-arrow-up"></i></a>
+
+  <!-- Bootstrap JS from CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    function predictURL() {
+      var url = document.getElementById("name").value;
+      if (url == "") {
+        alert("ENTER A URL");
+      } else {
+        if (url.includes("http")) {
+          document.getElementById("predict").innerHTML = "Predicting ...";
+          fetch("http://127.0.0.1:8000/predict/", {
+            method: "POST",
+            headers: {
+              "Content-type": "application/json",
+            },
+            body: JSON.stringify({
+              url: url,
+            }),
+          })
+            .then((response) => {
+              if (!response.ok) {
+                throw new Error("Network response was not ok");
+              }
+              return response.json();
+            })
+            .then((data) => {
+              document.getElementById("predict").innerHTML = "Predicted";
+              document.getElementById("predict").className = "btn btn-success";
+
+              var predictionResult = document.getElementById("prediction-result");
+              var phishingProbability = document.getElementById("phishing-probability");
+              var resultContainer = document.querySelector(".result-container");
+              var proceedBtnClass = document.querySelector(".proceed-button");
+              var proceedBtn = document.getElementById("proceed-btn");
+
+              // Get threshold value
+              // const threshold = parseFloat(document.getElementById("threshold").value);
+
+              // Find bidirectional LSTM model (main model for primary result)
+              const bidirectionalModel = data.model_mapping.find(model => 
+                model.model === "bidirectional_lstm"
+              );
+
+              // Use bidirectional LSTM as primary decision maker
+              const primaryModel = bidirectionalModel || data.model_mapping[0]; // fallback to first model
+              const finalDecision = primaryModel.is_phishing;
+              
+              // Check if bidirectional LSTM exceeds threshold
+              // const exceedsThreshold = primaryModel.phishing_prediction > threshold;
+              
+              predictionResult.textContent = finalDecision ? "Suspicious" : "Non-Suspicious";
+              phishingProbability.textContent = primaryModel.phishing_prediction.toFixed(2) + "%";
+
+              if (finalDecision) {
+                predictionResult.style.color = "#dc3545";
+                proceedBtn.className = "btn btn-danger";
+                proceedBtn.innerText = "Proceed With Caution";
+              } else {
+                predictionResult.style.color = "#198754";
+                proceedBtn.className = "btn btn-success";
+                proceedBtn.innerText = "Proceed";
+              }
+
+              // Add decision reason
+              const existingReason = document.getElementById("decision-reason");
+              if (existingReason) existingReason.remove();
+              
+              const reasonElement = document.createElement("p");
+              reasonElement.id = "decision-reason";
+              reasonElement.innerHTML = `<small style="color: #666;">Primary model: ${primaryModel.model.toUpperCase()}</small>`;
+              resultContainer.appendChild(reasonElement);
+
+              proceedBtnClass.style.display = "block";
+              resultContainer.style.display = "block";
+
+              // Display all model bars in single row
+              const modelBars = document.getElementById("model-bars");
+              const modelResultsContainer = document.getElementById("model-results");
+              modelBars.innerHTML = "";
+
+              data.model_mapping.forEach((model) => {
+                const isBidirectional = model.model === "bidirectional_lstm";
+                // const exceedsThreshold = model.phishing_prediction > threshold;
+
+                const modelBox = document.createElement("div");
+                modelBox.className = isBidirectional ? "model-box best-model" : "model-box regular-model";
+                
+                // Add threshold indicator
+                // if (exceedsThreshold) {
+                //   modelBox.style.borderColor = "#dc3545";
+                //   modelBox.style.borderWidth = "2px";
+                // }
+                // ${exceedsThreshold ? "" : ""}
+
+
+                modelBox.innerHTML = `
+                  <div class="fw-bold mb-2" style="color: ${isBidirectional ? '#155724' : '#333'}">
+                    ${model.model.toUpperCase()} ${isBidirectional ? "(PRIMARY)" : ""}  
+                  </div>
+                  <div class="progress" style="height: 20px;">
+                    <div class="progress-bar bg-danger" role="progressbar" style="width: ${model.phishing_prediction}%;">
+                      Phishing ${model.phishing_prediction.toFixed(2)}%
+                    </div>
+                    <div class="progress-bar bg-success" role="progressbar" style="width: ${model.non_phishing_prediction}%;">
+                      Legit ${model.non_phishing_prediction.toFixed(2)}%
+                    </div>
+                  </div>
+                  ${isBidirectional ? '<small class="text-success mt-1 d-block">Primary model result</small>' : ''}
+                `;
+
+                modelBars.appendChild(modelBox);
+              });
+
+              modelResultsContainer.style.display = "block";
+            })
+            .catch((error) => {
+              console.error(
+                "There was a problem with the fetch operation:",
+                error
+              );
+            });
+        } else {
+          alert("URL MUST CONTAIN HTTPS OR HTTP");
+        }
+      }
+    }
+
+    function proceedURL() {
+      var url = document.getElementById("name").value;
+      console.log(url);
+      if (url) {
+        window.location.href = url;
+      } else {
+        alert("Please enter a valid URL.");
+      }
+    }
+
+    function resetPage() {
+      location.reload();
+    }
+  </script>
+</body>
+
+</html>

@@ -160,137 +160,6 @@
         color: #721c24;
         border: 1px solid #f5c6cb;
       }
-
-      /* Model Results Styles */
-      .model-results-container {
-        display: none;
-        margin-top: 30px;
-        width: 100%;
-        max-width: 1000px;
-      }
-
-      .model-results-grid {
-        display: flex;
-        gap: 20px;
-        flex-wrap: wrap;
-        justify-content: center;
-      }
-
-      .model-result-box {
-        flex: 1;
-        min-width: 280px;
-        background: white;
-        border-radius: 12px;
-        padding: 25px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        border: 2px solid #e0e0e0;
-        transition: transform 0.2s, box-shadow 0.2s;
-      }
-
-      .model-result-box:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-      }
-
-      .model-result-box.primary {
-        border: 3px solid #007bff;
-        box-shadow: 0 4px 16px rgba(0, 123, 255, 0.2);
-      }
-
-      .model-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 15px;
-      }
-
-      .model-name {
-        font-size: 16px;
-        font-weight: 600;
-        color: #333;
-        text-transform: capitalize;
-      }
-
-      .primary-badge {
-        background: #007bff;
-        color: white;
-        padding: 4px 12px;
-        border-radius: 12px;
-        font-size: 11px;
-        font-weight: 600;
-        text-transform: uppercase;
-      }
-
-      .prediction-status {
-        text-align: center;
-        margin: 20px 0;
-      }
-
-      .status-text {
-        font-size: 24px;
-        font-weight: 700;
-        margin-bottom: 8px;
-      }
-
-      .status-text.safe {
-        color: #28a745;
-      }
-
-      .status-text.danger {
-        color: #dc3545;
-      }
-
-      .probability-container {
-        margin-top: 15px;
-      }
-
-      .probability-row {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 12px;
-        align-items: center;
-      }
-
-      .probability-label {
-        font-size: 13px;
-        color: #666;
-        font-weight: 500;
-      }
-
-      .probability-value {
-        font-size: 16px;
-        font-weight: 700;
-      }
-
-      .probability-value.phishing {
-        color: #dc3545;
-      }
-
-      .probability-value.safe {
-        color: #28a745;
-      }
-
-      .progress-bar-container {
-        width: 100%;
-        height: 8px;
-        background: #f0f0f0;
-        border-radius: 4px;
-        overflow: hidden;
-        margin-top: 8px;
-      }
-
-      .progress-bar {
-        height: 100%;
-        transition: width 0.5s ease;
-      }
-
-      .progress-bar.phishing {
-        background: linear-gradient(90deg, #ff6b6b, #dc3545);
-      }
-
-      .progress-bar.safe {
-        background: linear-gradient(90deg, #51cf66, #28a745);
-      }
     </style>
   </head>
 
@@ -312,6 +181,7 @@
           </ul>
         </nav>
         <div id="authStatus" style="margin-left:16px; color: white; display: flex; gap:12px; align-items:center">
+          <!-- Filled by JS: Welcome text and logout button when logged in -->
         </div>
       </div>
     </header>
@@ -355,14 +225,22 @@
             </button>
           </div>
         </form>
-
-        <!-- Model Results Container -->
-        <div class="model-results-container" id="modelResultsContainer">
-          <div class="model-results-grid" id="modelResultsGrid">
-            <!-- Model result boxes will be inserted here by JavaScript -->
+        <div class="result-container" style="display: none">
+          <p>
+            Prediction:
+            <span id="prediction-result" style="font-weight: bold"></span>
+          </p>
+          <p>
+            Phishing Probability:
+            <span id="phishing-probability" style="font-weight: bold"></span>
+          </p>
+        </div>
+        <div id="model-results" style="display: none; padding: 1px 1px; margin-top: 10px;" class="container-fluid text-center">
+          <h4 class="text-dark mb-4">Model Predictions</h4>
+          <div class="d-flex justify-content-center">
+            <div id="model-bars"></div>
           </div>
         </div>
-
         <!-- Custom Auth Modal -->
         <div id="authModalOverlay">
           <div class="auth-modal-content">
@@ -422,7 +300,7 @@
             <div class="about-description">
               <p>
                 Phishing Link Detection System is a sixth semester project for
-                "Detection of Phishing Website Using Machine (Deep) Learning".
+                “Detection of Phishing Website Using Machine (Deep) Learning”.
                 It aims to help reduce phishing attack by helping internet users
                 authenticate URL link by testing if it is phishing or
                 legitimate. The progress of validating a Website URL for
@@ -468,6 +346,8 @@
         </div>
       </section>
       <!-- End about Section -->
+
+      <!-- ======= Usecases ======= -->
     </main>
     <!-- End #main -->
 
@@ -486,6 +366,7 @@
     <!-- End Footer -->
 
     <a href="#" class="back-to-top"><i class="icofont-simple-up"></i></a>
+    <!-- <div id="preloader"></div> -->
 
     <!-- Vendor JS Files -->
     <script src="assets/vendor/jquery/jquery.min.js"></script>
@@ -512,10 +393,10 @@
         var overlay = document.getElementById("authModalOverlay");
         var alertBox = document.getElementById("auth-alert");
         
-        // Reset form
-        document.getElementById("authUsername").value = "";
-        document.getElementById("authEmail").value = "";
-        document.getElementById("authPassword").value = "";
+  // Reset form
+  document.getElementById("authUsername").value = "";
+  document.getElementById("authEmail").value = "";
+  document.getElementById("authPassword").value = "";
         
         // Show alert if message provided
         if (message) {
@@ -559,14 +440,18 @@
             return;
           }
           // Success handling
-          if (action === "signup") {
+            if (action === "signup") {
+            // Keep modal open and show a success message; ask user to login
             const alertBox = document.getElementById("auth-alert");
             alertBox.classList.add("show", "alert-info");
             alertBox.classList.remove("alert-danger");
             alertBox.textContent = "User created successfully. Please login.";
+            // clear password for safety
             const pwd = document.getElementById("authPassword");
             if (pwd) pwd.value = "";
+            // do not store token on signup to force explicit login
           } else {
+            // login flow: store token if present and close modal
             if (data.access_token) {
               localStorage.setItem("access_token", data.access_token);
               if (data.username) {
@@ -575,6 +460,7 @@
             }
             hideAuthModal();
           }
+          // update header auth UI
           updateAuthUI();
           return data;
         } catch (err) {
@@ -584,6 +470,7 @@
 
       // Attach event listeners when DOM is ready
       document.addEventListener("DOMContentLoaded", function () {
+        // update UI immediately on load
         updateAuthUI();
         var loginBtn = document.getElementById("authLoginBtn");
         var signupBtn = document.getElementById("authSignupBtn");
@@ -608,6 +495,7 @@
             hideAuthModal();
           });
         }
+        // Close modal when clicking outside (on overlay)
         if (overlay) {
           overlay.addEventListener("click", function (e) {
             if (e.target === overlay) {
@@ -615,68 +503,16 @@
             }
           });
         }
+        // logout button listener (delegated)
         document.getElementById("authStatus").addEventListener("click", function (e) {
           if (e.target && e.target.id === 'logoutBtn') {
+            // clear token and username
             localStorage.removeItem('access_token');
             localStorage.removeItem('user_name');
             updateAuthUI();
           }
         });
       });
-
-      function displayModelResults(modelMapping) {
-        const container = document.getElementById('modelResultsContainer');
-        const grid = document.getElementById('modelResultsGrid');
-        
-        // Clear previous results
-        grid.innerHTML = '';
-        
-        // Create a box for each model
-        modelMapping.forEach((model) => {
-          const isPrimary = model.model === 'bidirectional_lstm';
-          const isPhishing = model.is_phishing;
-          
-          const box = document.createElement('div');
-          box.className = 'model-result-box' + (isPrimary ? ' primary' : '');
-          
-          // Format model name
-          const modelName = model.model.replace(/_/g, ' ');
-          
-          box.innerHTML = `
-            <div class="model-header">
-              <div class="model-name">${modelName}</div>
-              ${isPrimary ? '<span class="primary-badge">Primary Model</span>' : ''}
-            </div>
-            <div class="prediction-status">
-              <div class="status-text ${isPhishing ? 'danger' : 'safe'}">
-                ${isPhishing ? 'Suspicious' : 'Non-Suspicious'}
-              </div>
-            </div>
-            <div class="probability-container">
-              <div class="probability-row">
-                <span class="probability-label">Phishing:</span>
-                <span class="probability-value phishing">${model.phishing_prediction.toFixed(2)}%</span>
-              </div>
-              <div class="progress-bar-container">
-                <div class="progress-bar phishing" style="width: ${model.phishing_prediction}%"></div>
-              </div>
-              
-              <div class="probability-row" style="margin-top: 15px;">
-                <span class="probability-label">Non-Phishing:</span>
-                <span class="probability-value safe">${model.non_phishing_prediction.toFixed(2)}%</span>
-              </div>
-              <div class="progress-bar-container">
-                <div class="progress-bar safe" style="width: ${model.non_phishing_prediction}%"></div>
-              </div>
-            </div>
-          `;
-          
-          grid.appendChild(box);
-        });
-        
-        // Show the container
-        container.style.display = 'block';
-      }
 
       async function predictURL() {
         var url = document.getElementById("name").value;
@@ -708,6 +544,7 @@
           .then((response) => {
             if (!response.ok) {
               if (response.status === 401) {
+                // token invalid or expired
                 localStorage.removeItem("access_token");
                 showAuthModal("Session expired, please login again.");
                 throw new Error("Unauthorized");
@@ -720,36 +557,79 @@
             console.log(data);
             document.getElementById("predict").innerHTML = "Predicted";
             document.getElementById("predict").className = "btn btn-success";
-            
+            var predictionResult = document.getElementById("prediction-result");
+            var phishingProbability = document.getElementById("phishing-probability");
+            var resultContainer = document.querySelector(".result-container");
+            var proceedBtnClass = document.querySelector(".proceed-button");
+            var proceedBtn = document.getElementById("proceed-btn");
+            proceedBtn.className = "btn btn-success";
+            proceedBtn.innerText = "Proceed";
+
+            // Data format: { url: ..., model_mapping: [ {model, is_phishing, phishing_prediction, ...}, ... ] }
             const mapping = data.model_mapping || [];
-            
-            // Display all model results
-            if (mapping.length > 0) {
-              displayModelResults(mapping);
-              
-              // Find bidirectional_lstm result for proceed button
-              const primaryModel = mapping.find(m => m.model === 'bidirectional_lstm');
-              const isPrimaryPhishing = primaryModel ? primaryModel.is_phishing : false;
-              
-              // Update proceed button
-              var proceedBtnClass = document.querySelector(".proceed-button");
-              var proceedBtn = document.getElementById("proceed-btn");
-              
-              if (isPrimaryPhishing) {
-                proceedBtn.className = "btn btn-danger";
-                proceedBtn.innerText = "Proceed With Caution";
-              } else {
-                proceedBtn.className = "btn btn-success";
-                proceedBtn.innerText = "Proceed";
-              }
-              
-              proceedBtnClass.style.display = "block";
+
+            // Find bidirectional LSTM model (main model for primary result)
+            const bidirectionalModel = mapping.find(model => model.model === "bidirectional_lstm");
+            const primaryModel = bidirectionalModel || mapping[0];
+            const finalDecision = primaryModel ? primaryModel.is_phishing : false;
+
+            predictionResult.textContent = finalDecision ? "Suspicious" : "Non-Suspcious";
+            phishingProbability.textContent = primaryModel ? primaryModel.phishing_prediction.toFixed(2) + "%" : "0%";
+
+            if (finalDecision) {
+              predictionResult.classList.add("phishing");
+              proceedBtn.className = "btn btn-danger";
+              proceedBtn.innerText = "Proceed With Caution";
+            } else {
+              predictionResult.classList.remove("phishing");
+              proceedBtn.className = "btn btn-success";
+              proceedBtn.innerText = "Proceed";
             }
+
+            // Add decision reason
+            const existingReason = document.getElementById("decision-reason");
+            if (existingReason) existingReason.remove();
+            const reasonElement = document.createElement("p");
+            reasonElement.id = "decision-reason";
+            reasonElement.innerHTML = `<small style="color: #666;">Primary model: ${primaryModel ? primaryModel.model.toUpperCase() : 'N/A'}</small>`;
+            resultContainer.appendChild(reasonElement);
+
+            proceedBtnClass.style.display = "block";
+            resultContainer.style.display = "block";
+
+            // Display all model bars in single row
+            const modelBars = document.getElementById("model-bars");
+            const modelResultsContainer = document.getElementById("model-results");
+            modelBars.innerHTML = "";
+
+            mapping.forEach((model) => {
+              const isBidirectional = model.model === "bidirectional_lstm";
+
+              const modelBox = document.createElement("div");
+              modelBox.className = isBidirectional ? "model-box best-model" : "model-box regular-model";
+
+              modelBox.innerHTML = `
+                <div class="fw-bold mb-2" style="color: ${isBidirectional ? '#155724' : '#333'}">
+                  ${model.model.toUpperCase()} ${isBidirectional ? "(PRIMARY)" : ""}  
+                </div>
+                <div class="progress" style="height: 20px;">
+                  <div class="progress-bar bg-danger" role="progressbar" style="width: ${model.phishing_prediction}%;">
+                    Phishing ${model.phishing_prediction.toFixed(2)}%
+                  </div>
+                  <div class="progress-bar bg-success" role="progressbar" style="width: ${model.non_phishing_prediction}%;">
+                    Legit ${model.non_phishing_prediction.toFixed(2)}%
+                  </div>
+                </div>
+                ${isBidirectional ? '<small class="text-success mt-1 d-block">Primary model result</small>' : ''}
+              `;
+
+              modelBars.appendChild(modelBox);
+            });
+
+            modelResultsContainer.style.display = "block";
           })
           .catch((error) => {
             console.error("There was a problem with the fetch operation:", error);
-            document.getElementById("predict").innerHTML = "Predict";
-            document.getElementById("predict").className = "btn btn-danger";
           });
       }
 
@@ -774,6 +654,7 @@
           container.appendChild(welcome);
           container.appendChild(logoutBtn);
         } else {
+          // show nothing or a small login hint
           const hint = document.createElement('span');
           hint.textContent = '';
           container.appendChild(hint);
