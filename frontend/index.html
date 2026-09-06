@@ -6,7 +6,7 @@
     <title>Phishing Link Detection System</title>
 
     <!-- Favicons -->
-    <link href="assets/img/mainlogo.jpeg" rel="icon" />
+    <link href="assets/img/home.jpg" rel="icon" />
 
     <!--==================== UNICONS ====================-->
     <link
@@ -39,6 +39,259 @@
 
     <!-- Template Main CSS File -->
     <link href="assets/css/style.css" rel="stylesheet" />
+    
+    <style>
+      .modal-backdrop {
+        z-index: 9998 !important;
+      }
+      .modal {
+        z-index: 9999 !important;
+      }
+      .modal-dialog {
+        z-index: 10000 !important;
+      }
+      
+      /* Custom auth modal styles */
+      #authModalOverlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 9998;
+      }
+      
+      #authModalOverlay.show {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      
+      .auth-modal-content {
+        background: white;
+        border-radius: 8px;
+        padding: 30px;
+        max-width: 400px;
+        width: 90%;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        z-index: 9999;
+        position: relative;
+      }
+      
+      .auth-modal-content h2 {
+        margin-bottom: 20px;
+        font-size: 24px;
+      }
+      
+      .auth-modal-content .form-group {
+        margin-bottom: 15px;
+      }
+      
+      .auth-modal-content label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 500;
+      }
+      
+      .auth-modal-content input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-sizing: border-box;
+      }
+      
+      .auth-modal-content .button-group {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+      }
+      
+      .auth-modal-content button {
+        flex: 1;
+        padding: 10px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+      }
+      
+      #authCloseBtn {
+        background-color: #6c757d;
+        color: white;
+      }
+      
+      #authSignupBtn {
+        background-color: #007bff;
+        color: white;
+      }
+      
+      #authLoginBtn {
+        background-color: #28a745;
+        color: white;
+      }
+      
+      .auth-modal-content button:hover {
+        opacity: 0.9;
+      }
+      
+      #auth-alert {
+        margin-bottom: 15px;
+        padding: 10px;
+        border-radius: 4px;
+        display: none;
+      }
+      
+      #auth-alert.show {
+        display: block;
+      }
+      
+      #auth-alert.alert-info {
+        background-color: #d1ecf1;
+        color: #0c5460;
+        border: 1px solid #bee5eb;
+      }
+      
+      #auth-alert.alert-danger {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+
+      /* Model Results Styles */
+      .model-results-container {
+        display: none;
+        margin-top: 30px;
+        width: 100%;
+        max-width: 1000px;
+      }
+
+      .model-results-grid {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .model-result-box {
+        flex: 1;
+        min-width: 280px;
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        border: 2px solid #e0e0e0;
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+
+      .model-result-box:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+      }
+
+      .model-result-box.primary {
+        border: 3px solid #007bff;
+        box-shadow: 0 4px 16px rgba(0, 123, 255, 0.2);
+      }
+
+      .model-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 15px;
+      }
+
+      .model-name {
+        font-size: 16px;
+        font-weight: 600;
+        color: #333;
+        text-transform: capitalize;
+      }
+
+      .primary-badge {
+        background: #007bff;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+
+      .prediction-status {
+        text-align: center;
+        margin: 20px 0;
+      }
+
+      .status-text {
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 8px;
+      }
+
+      .status-text.safe {
+        color: #28a745;
+      }
+
+      .status-text.danger {
+        color: #dc3545;
+      }
+
+      .probability-container {
+        margin-top: 15px;
+      }
+
+      .probability-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 12px;
+        align-items: center;
+      }
+
+      .probability-label {
+        font-size: 13px;
+        color: #666;
+        font-weight: 500;
+      }
+
+      .probability-value {
+        font-size: 16px;
+        font-weight: 700;
+      }
+
+      .probability-value.phishing {
+        color: #dc3545;
+      }
+
+      .probability-value.safe {
+        color: #28a745;
+      }
+
+      .progress-bar-container {
+        width: 100%;
+        height: 8px;
+        background: #f0f0f0;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-top: 8px;
+      }
+
+      .progress-bar {
+        height: 100%;
+        transition: width 0.5s ease;
+      }
+
+      .progress-bar.phishing {
+        background: linear-gradient(90deg, #ff6b6b, #dc3545);
+      }
+
+      .progress-bar.safe {
+        background: linear-gradient(90deg, #51cf66, #28a745);
+      }
+    </style>
   </head>
 
   <body>
@@ -58,6 +311,8 @@
             <li><a href="#about" style="color: white">About</a></li>
           </ul>
         </nav>
+        <div id="authStatus" style="margin-left:16px; color: white; display: flex; gap:12px; align-items:center">
+        </div>
       </div>
     </header>
     <!-- End Header -->
@@ -100,15 +355,39 @@
             </button>
           </div>
         </form>
-        <div class="result-container" style="display: none">
-          <p>
-            Prediction:
-            <span id="prediction-result" style="font-weight: bold"></span>
-          </p>
-          <p>
-            Phishing Probability:
-            <span id="phishing-probability" style="font-weight: bold"></span>
-          </p>
+
+        <!-- Model Results Container -->
+        <div class="model-results-container" id="modelResultsContainer">
+          <div class="model-results-grid" id="modelResultsGrid">
+            <!-- Model result boxes will be inserted here by JavaScript -->
+          </div>
+        </div>
+
+        <!-- Custom Auth Modal -->
+        <div id="authModalOverlay">
+          <div class="auth-modal-content">
+            <h2>Login or Signup</h2>
+            <div id="auth-alert"></div>
+            <form id="authForm">
+                <div class="form-group">
+                  <label for="authUsername">Username</label>
+                  <input type="text" class="form-control" id="authUsername" />
+                </div>
+                <div class="form-group">
+                  <label for="authEmail">Email</label>
+                  <input type="email" class="form-control" id="authEmail" required />
+                </div>
+                <div class="form-group">
+                  <label for="authPassword">Password</label>
+                  <input type="password" class="form-control" id="authPassword" required />
+                </div>
+            </form>
+            <div class="button-group">
+              <button type="button" id="authCloseBtn">Close</button>
+              <button type="button" id="authSignupBtn">Sign up</button>
+              <button type="button" id="authLoginBtn">Login</button>
+            </div>
+          </div>
         </div>
         <br />
         <div class="proceed-button" style="display: none">
@@ -142,17 +421,17 @@
             <h2>About Phishing Link Detection System</h2>
             <div class="about-description">
               <p>
-                Phishing Link Detection System is a sixth semester project for
-                “Detection of Phishing Website Using Machine (Deep) Learning”.
-                It aims to help reduce phishing attack by helping internet users
-                authenticate URL link by testing if it is phishing or
-                legitimate. The progress of validating a Website URL for
-                phishing or legitimate has gone through several layers of LSTM
-                model. This project aims to develop a machine learning model
-                that can detect phishing websites automatically. Phishing
-                websites are fraudulent websites that mimic legitimate websites
-                to trick users into providing sensitive information such as
-                login credentials, credit card details, or personal information.
+              Phishing Link Detection System is a eight semester project for
+              "Detection of Phishing Website Using Machine (Deep) Learning".
+              It aims to help reduce phishing attack by helping internet users
+              authenticate URL link by testing if it is phishing or
+              legitimate. The progress of validating a Website URL for
+              phishing or legitimate has gone through several layers of LSTM
+              model. This project aims to develop a machine learning model
+              that can detect phishing websites automatically. Phishing
+              websites are fraudulent websites that mimic legitimate websites
+              to trick users into providing sensitive information such as
+              login credentials, credit card details, or personal information.
               </p>
               <br />
               <p>
@@ -189,8 +468,6 @@
         </div>
       </section>
       <!-- End about Section -->
-
-      <!-- ======= Usecases ======= -->
     </main>
     <!-- End #main -->
 
@@ -200,7 +477,7 @@
         <div class="text-center text-md-center">
           <div class="copyright">
             <p style="padding-top: 8px; font-weight: 600">
-              6th Semester Project &copy; 2024. All Rights Reserved
+              8th Semester Project &copy; 2024. All Rights Reserved
             </p>
           </div>
         </div>
@@ -209,7 +486,6 @@
     <!-- End Footer -->
 
     <a href="#" class="back-to-top"><i class="icofont-simple-up"></i></a>
-    <!-- <div id="preloader"></div> -->
 
     <!-- Vendor JS Files -->
     <script src="assets/vendor/jquery/jquery.min.js"></script>
@@ -227,68 +503,280 @@
     <!-- Template Main JS File -->
     <script src="assets/js/main.js"></script>
     <script>
-      function predictURL() {
+      // Authentication helpers
+      function isLoggedIn() {
+        return !!localStorage.getItem("access_token");
+      }
+
+      function showAuthModal(message) {
+        var overlay = document.getElementById("authModalOverlay");
+        var alertBox = document.getElementById("auth-alert");
+        
+        // Reset form
+        document.getElementById("authUsername").value = "";
+        document.getElementById("authEmail").value = "";
+        document.getElementById("authPassword").value = "";
+        
+        // Show alert if message provided
+        if (message) {
+          alertBox.classList.add("show");
+          alertBox.classList.add("alert-info");
+          alertBox.classList.remove("alert-danger");
+          alertBox.textContent = message;
+        } else {
+          alertBox.classList.remove("show");
+        }
+        
+        // Show overlay
+        overlay.classList.add("show");
+        console.log("Auth modal shown");
+      }
+      
+      function hideAuthModal() {
+        var overlay = document.getElementById("authModalOverlay");
+        overlay.classList.remove("show");
+        console.log("Auth modal hidden");
+      }
+
+      async function handleAuth(action) {
+        const email = document.getElementById("authEmail").value;
+        const password = document.getElementById("authPassword").value;
+        const username = document.getElementById("authUsername").value;
+        const url = action === "login" ? "http://127.0.0.1:8000/login" : "http://127.0.0.1:8000/signup";
+        try {
+          const res = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(action === 'signup' ? { email: email, password: password, username: username } : { email: email, password: password }),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            const alertBox = document.getElementById("auth-alert");
+            alertBox.classList.remove("d-none");
+            alertBox.classList.remove("alert-info");
+            alertBox.classList.add("alert-danger");
+            alertBox.textContent = data.detail || (data.error || "Authentication failed");
+            return;
+          }
+          // Success handling
+          if (action === "signup") {
+            const alertBox = document.getElementById("auth-alert");
+            alertBox.classList.add("show", "alert-info");
+            alertBox.classList.remove("alert-danger");
+            alertBox.textContent = "User created successfully. Please login.";
+            const pwd = document.getElementById("authPassword");
+            if (pwd) pwd.value = "";
+          } else {
+            if (data.access_token) {
+              localStorage.setItem("access_token", data.access_token);
+              if (data.username) {
+                localStorage.setItem("user_name", data.username);
+              }
+            }
+            hideAuthModal();
+          }
+          updateAuthUI();
+          return data;
+        } catch (err) {
+          console.error(err);
+        }
+      }
+
+      // Attach event listeners when DOM is ready
+      document.addEventListener("DOMContentLoaded", function () {
+        updateAuthUI();
+        var loginBtn = document.getElementById("authLoginBtn");
+        var signupBtn = document.getElementById("authSignupBtn");
+        var closeBtn = document.getElementById("authCloseBtn");
+        var overlay = document.getElementById("authModalOverlay");
+        
+        if (loginBtn) {
+          loginBtn.addEventListener("click", function () {
+            console.log("Login clicked");
+            handleAuth("login");
+          });
+        }
+        if (signupBtn) {
+          signupBtn.addEventListener("click", function () {
+            console.log("Signup clicked");
+            handleAuth("signup");
+          });
+        }
+        if (closeBtn) {
+          closeBtn.addEventListener("click", function () {
+            console.log("Close clicked");
+            hideAuthModal();
+          });
+        }
+        if (overlay) {
+          overlay.addEventListener("click", function (e) {
+            if (e.target === overlay) {
+              hideAuthModal();
+            }
+          });
+        }
+        document.getElementById("authStatus").addEventListener("click", function (e) {
+          if (e.target && e.target.id === 'logoutBtn') {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('user_name');
+            updateAuthUI();
+          }
+        });
+      });
+
+      function displayModelResults(modelMapping) {
+        const container = document.getElementById('modelResultsContainer');
+        const grid = document.getElementById('modelResultsGrid');
+        
+        // Clear previous results
+        grid.innerHTML = '';
+        
+        // Create a box for each model
+        modelMapping.forEach((model) => {
+          const isPrimary = model.model === 'bidirectional_lstm';
+          const isPhishing = model.is_phishing;
+          
+          const box = document.createElement('div');
+          box.className = 'model-result-box' + (isPrimary ? ' primary' : '');
+          
+          // Format model name
+          const modelName = model.model.replace(/_/g, ' ');
+          
+          box.innerHTML = `
+            <div class="model-header">
+              <div class="model-name">${modelName}</div>
+              ${isPrimary ? '<span class="primary-badge">Primary Model</span>' : ''}
+            </div>
+            <div class="prediction-status">
+              <div class="status-text ${isPhishing ? 'danger' : 'safe'}">
+                ${isPhishing ? 'Suspicious' : 'Non-Suspicious'}
+              </div>
+            </div>
+            <div class="probability-container">
+              <div class="probability-row">
+                <span class="probability-label">Phishing:</span>
+                <span class="probability-value phishing">${model.phishing_prediction.toFixed(2)}%</span>
+              </div>
+              <div class="progress-bar-container">
+                <div class="progress-bar phishing" style="width: ${model.phishing_prediction}%"></div>
+              </div>
+              
+              <div class="probability-row" style="margin-top: 15px;">
+                <span class="probability-label">Non-Phishing:</span>
+                <span class="probability-value safe">${model.non_phishing_prediction.toFixed(2)}%</span>
+              </div>
+              <div class="progress-bar-container">
+                <div class="progress-bar safe" style="width: ${model.non_phishing_prediction}%"></div>
+              </div>
+            </div>
+          `;
+          
+          grid.appendChild(box);
+        });
+        
+        // Show the container
+        container.style.display = 'block';
+      }
+
+      async function predictURL() {
         var url = document.getElementById("name").value;
         if (url == "") {
           alert("ENTER A URL");
-        } else {
-          if (url.includes("http")) {
-            document.getElementById("predict").innerHTML = "Predicting ...";
+          return;
+        }
+        if (!url.includes("http")) {
+          alert("URL MUST CONTAIN HTTPS OR HTTP");
+          return;
+        }
 
-            fetch("http://127.0.0.1:8000/predict/", {
-              method: "POST",
-              headers: {
-                "Content-type": "application/json",
-              },
-              body: JSON.stringify({
-                url: url,
-              }),
-            })
-              .then((response) => {
-                if (!response.ok) {
-                  throw new Error("Network response was not ok");
-                }
-                return response.json();
-              })
-              .then((data) => {
-                console.log(data);
-                document.getElementById("predict").innerHTML = "Predicted";
-                document.getElementById("predict").className =
-                  "btn btn-success";
-                var predictionResult =
-                  document.getElementById("prediction-result");
-                var phishingProbability = document.getElementById(
-                  "phishing-probability"
-                );
-                var resultContainer =
-                  document.querySelector(".result-container");
-                var proceedBtnClass = document.querySelector(".proceed-button");
-                var proceedBtn = document.getElementById("proceed-btn");
+        if (!isLoggedIn()) {
+          showAuthModal("Please login or signup to use prediction.");
+          return;
+        }
+
+        document.getElementById("predict").innerHTML = "Predicting ...";
+        const token = localStorage.getItem("access_token");
+
+        fetch("http://127.0.0.1:8000/predict/", {
+          method: "POST",
+          headers: {
+            "Content-type": "application/json",
+            Authorization: "Bearer " + token,
+          },
+          body: JSON.stringify({ url: url }),
+        })
+          .then((response) => {
+            if (!response.ok) {
+              if (response.status === 401) {
+                localStorage.removeItem("access_token");
+                showAuthModal("Session expired, please login again.");
+                throw new Error("Unauthorized");
+              }
+              throw new Error("Network response was not ok");
+            }
+            return response.json();
+          })
+          .then((data) => {
+            console.log(data);
+            document.getElementById("predict").innerHTML = "Predicted";
+            document.getElementById("predict").className = "btn btn-success";
+            
+            const mapping = data.model_mapping || [];
+            
+            // Display all model results
+            if (mapping.length > 0) {
+              displayModelResults(mapping);
+              
+              // Find bidirectional_lstm result for proceed button
+              const primaryModel = mapping.find(m => m.model === 'bidirectional_lstm');
+              const isPrimaryPhishing = primaryModel ? primaryModel.is_phishing : false;
+              
+              // Update proceed button
+              var proceedBtnClass = document.querySelector(".proceed-button");
+              var proceedBtn = document.getElementById("proceed-btn");
+              
+              if (isPrimaryPhishing) {
+                proceedBtn.className = "btn btn-danger";
+                proceedBtn.innerText = "Proceed With Caution";
+              } else {
                 proceedBtn.className = "btn btn-success";
                 proceedBtn.innerText = "Proceed";
-                predictionResult.textContent = data.is_phishing
-                  ? "Suspicious"
-                  : "Non-Suspcious";
+              }
+              
+              proceedBtnClass.style.display = "block";
+            }
+          })
+          .catch((error) => {
+            console.error("There was a problem with the fetch operation:", error);
+            document.getElementById("predict").innerHTML = "Predict";
+            document.getElementById("predict").className = "btn btn-danger";
+          });
+      }
 
-                if (data.is_phishing) {
-                  predictionResult.classList.add("phishing");
-                  proceedBtn.className = "btn btn-danger";
-                  proceedBtn.innerText = "Proceed With Caution";
-                }
-                phishingProbability.textContent =
-                  data.phishing_prediction + "%";
-                proceedBtnClass.style.display = "block";
-                resultContainer.style.display = "block";
-              })
-              .catch((error) => {
-                console.error(
-                  "There was a problem with the fetch operation:",
-                  error
-                );
-              });
-          } else {
-            alert("URL MUST CONTAIN HTTPS OR HTTP");
-          }
+      function updateAuthUI() {
+        const container = document.getElementById('authStatus');
+        const token = localStorage.getItem('access_token');
+        const username = localStorage.getItem('user_name');
+        container.innerHTML = '';
+        if (token && username) {
+          const welcome = document.createElement('span');
+          welcome.textContent = `Welcome, ${username}`;
+          welcome.style.fontWeight = '600';
+          const logoutBtn = document.createElement('button');
+          logoutBtn.id = 'logoutBtn';
+          logoutBtn.textContent = 'Logout';
+          logoutBtn.style.padding = '6px 10px';
+          logoutBtn.style.border = 'none';
+          logoutBtn.style.borderRadius = '4px';
+          logoutBtn.style.cursor = 'pointer';
+          logoutBtn.style.background = '#ff6b6b';
+          logoutBtn.style.color = 'white';
+          container.appendChild(welcome);
+          container.appendChild(logoutBtn);
+        } else {
+          const hint = document.createElement('span');
+          hint.textContent = '';
+          container.appendChild(hint);
         }
       }
 

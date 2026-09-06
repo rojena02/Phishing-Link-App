@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Phishing Link Detection System</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    *{
+      margin:0;
+      padding:0;
+      box-sizing:border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body{
+      background:#f8fafc;
+    }
+
+    /* Navigation */
+    .navbar{
+      background:#152a38;
+      padding:18px 50px;
+      color:white;
+      font-size:22px;
+      font-weight:600;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
+
+    .navbar a{
+      color:white;
+      text-decoration:none;
+      margin-left:25px;
+      font-size:16px;
+    }
+
+    /* Center Box */
+    .container{
+      max-width:430px;
+      background:white;
+      margin:70px auto;
+      padding:35px;
+      border-radius:12px;
+      box-shadow:0 4px 12px rgba(0,0,0,0.1);
+      text-align:center;
+    }
+
+    h2{
+      font-size:28px;
+      margin-bottom:20px;
+      color:#1f2937;
+    }
+
+    input{
+      width:100%;
+      padding:12px;
+      margin:10px 0;
+      border:1px solid #d1d5db;
+      border-radius:8px;
+      background:#f0f4f8;
+      font-size:15px;
+    }
+
+    .btn{
+      width:100%;
+      padding:12px;
+      margin-top:12px;
+      border:none;
+      border-radius:8px;
+      color:white;
+      cursor:pointer;
+      font-size:16px;
+    }
+
+    .login-btn{ background:#1d9752; }   /* green */
+    .login-btn:hover{ background:#167d43; }
+
+    .register-btn{ background:#2563eb; } /* blue */
+    .register-btn:hover{ background:#1d4ed8; }
+
+    .toggle{
+      margin-top:15px;
+      font-size:14px;
+    }
+
+    .toggle span{
+      color:#2563eb;
+      cursor:pointer;
+      font-weight:500;
+    }
+
+    .error{
+      color:red;
+      margin-top:10px;
+      font-size:14px;
+    }
+
+    .success{
+      color:green;
+      margin-top:10px;
+      font-size:14px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <div class="navbar">
+      <div>Phishing Link Detection System</div>
+      <div>
+          <a href="index.html">Home</a>
+          <a href="about.html">About</a>
+      </div>
+  </div>
+
+  <!-- LOGIN + REGISTER BOX -->
+  <div class="container">
+
+      <!-- LOGIN FORM -->
+      <div id="loginForm">
+        <h2>Login</h2>
+        <input type="email" id="loginEmail" placeholder="Enter your email" />
+        <input type="password" id="loginPassword" placeholder="Enter your password" />
+        <button class="btn login-btn" onclick="login()">Login</button>
+
+        <div class="toggle">
+          Don’t have an account? <span onclick="showRegister()">Register</span>
+        </div>
+
+        <div id="loginError" class="error"></div>
+      </div>
+
+      <!-- REGISTER FORM -->
+      <div id="registerForm" style="display:none;">
+        <h2>Create Account</h2>
+        <input type="text" id="regName" placeholder="Full Name" />
+        <input type="email" id="regEmail" placeholder="Email Address" />
+        <input type="password" id="regPassword" placeholder="Create Password (min 8 chars)" />
+        <input type="password" id="regConfirm" placeholder="Confirm Password" />
+        <button class="btn register-btn" onclick="register()">Register</button>
+
+        <div class="toggle">
+          Already have an account? <span onclick="showLogin()">Login</span>
+        </div>
+
+        <div id="regError" class="error"></div>
+        <div id="regSuccess" class="success"></div>
+      </div>
+
+  </div>
+
+<script>
+  function showRegister(){
+      document.getElementById("loginForm").style.display = "none";
+      document.getElementById("registerForm").style.display = "block";
+  }
+
+  function showLogin(){
+      document.getElementById("registerForm").style.display = "none";
+      document.getElementById("loginForm").style.display = "block";
+  }
+
+  // Login validation (frontend demo)
+  function login(){
+      let email = document.getElementById("loginEmail").value;
+      let pw = document.getElementById("loginPassword").value;
+      let error = document.getElementById("loginError");
+
+      if(email === "" || pw === ""){
+          error.innerHTML = "Please fill all fields.";
+          return;
+      }
+
+      // Demo logic – replace with backend API
+      if(email === "admin@gmail.com" && pw === "admin123"){
+          window.location.href = "detect.html";
+      } else {
+          error.innerHTML = "Invalid email or password.";
+      }
+  }
+
+  // Register validation (frontend demo)
+  function register(){
+      let name = document.getElementById("regName").value;
+      let email = document.getElementById("regEmail").value;
+      let pw = document.getElementById("regPassword").value;
+      let cpw = document.getElementById("regConfirm").value;
+
+      let err = document.getElementById("regError");
+      let success = document.getElementById("regSuccess");
+
+      err.innerHTML = "";
+      success.innerHTML = "";
+
+      if(!name || !email || !pw || !cpw){
+          err.innerHTML = "All fields are required.";
+          return;
+      }
+
+      if(pw.length < 8){
+          err.innerHTML = "Password must be at least 8 characters.";
+          return;
+      }
+
+      if(pw !== cpw){
+          err.innerHTML = "Passwords do not match.";
+          return;
+      }
+
+      success.innerHTML = "Account created successfully!";
+  }
+</script>
+
+</body>
+</html>
